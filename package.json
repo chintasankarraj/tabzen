@@ -22,5 +22,13 @@
     "creative-coding"
   ],
   "author": "TabZen Community",
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chintasankarraj/tabzen.git"
+  },
+  "bugs": {
+    "url": "https://github.com/chintasankarraj/tabzen/issues"
+  },
+  "homepage": "https://github.com/chintasankarraj/tabzen#readme"
 }
