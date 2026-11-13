@@ -37,84 +37,83 @@
     </div>
 
     <div class="header-actions">
-      <!-- 10-Second HD Video Recorder with Web Audio Sync -->
-      <button id="record-video-btn" class="video-record-btn" title="Record 10-Second HD Video Clip (WebM)">
-        <span class="record-pulse-dot">⏺️</span>
-        <span id="record-btn-text" class="record-btn-text">Record Clip</span>
-      </button>
-
-      <!-- Mindful Consistency Analytics Modal -->
-      <button id="open-analytics-btn" class="analytics-badge-btn" title="Mindful Consistency & 7-Day Activity Heatmap">
-        <span>📊</span>
-        <span class="analytics-badge-label">Analytics</span>
-      </button>
-
-      <!-- Acoustic Microphone Breath Follower Toggle -->
-      <button id="mic-breath-btn" class="mic-badge-btn" title="Acoustic Mic Breath Tracking (Exhale into mic)">
-        <span id="mic-badge-icon">🎙️</span>
-        <span id="mic-badge-text" class="mic-badge-text">Mic Sync</span>
-      </button>
-
-      <!-- Heart Rate EKG Coherence Button -->
-      <button id="open-heartbeat-btn" class="ekg-badge-btn" title="Tap-to-Sync Heart Rate & HRV Coherence">
-        <span>🫀</span>
-        <span id="ekg-badge-text">Sync Heart</span>
-      </button>
-
-      <!-- Theme Palette Selector -->
-      <div class="theme-picker" title="Switch Visual Theme">
-        <button class="theme-opt-btn active" data-theme="cosmic" title="Cosmic OLED">🌌</button>
-        <button class="theme-opt-btn" data-theme="sakura" title="Sakura Dusk">🌸</button>
-        <button class="theme-opt-btn" data-theme="forest" title="Forest Zen">🍃</button>
-        <button class="theme-opt-btn" data-theme="solar" title="Solar Dawn">🌅</button>
+      <!-- Cluster 1: Studio & Insights -->
+      <div class="header-cluster" title="Recording & Analytics">
+        <button id="record-video-btn" class="video-record-btn" title="Record 10-Second HD Video Clip (WebM)">
+          <span class="record-pulse-dot">⏺️</span>
+          <span id="record-btn-text" class="record-btn-text">Record</span>
+        </button>
+        <button id="open-analytics-btn" class="analytics-badge-btn" title="Mindful Consistency & 7-Day Activity Heatmap">
+          <span>📊</span>
+          <span class="analytics-badge-label">Analytics</span>
+        </button>
       </div>
 
-      <!-- Circadian Solar Auto-Shift & Night-Shift Blue-Light Filter -->
-      <button id="circadian-btn" class="icon-btn" title="Circadian Solar Clock (Auto-theme based on local time)">
-        <span>🌓</span>
-      </button>
-      <button id="blue-light-btn" class="icon-btn" title="Night-Shift Blue-Light Amber Shield">
-        <span>🌙</span>
-      </button>
+      <div class="header-divider" aria-hidden="true"></div>
 
-      <!-- Mindful Streak Indicator -->
-      <div class="streak-badge" title="Daily Mindful Reset Streak">
-        <span>🔥</span>
-        <span id="streak-count">1</span> <span style="opacity: 0.8; font-weight: normal;">day</span>
+      <!-- Cluster 2: Physiological Biometrics -->
+      <div class="header-cluster" title="Biometrics Sync">
+        <button id="mic-breath-btn" class="mic-badge-btn" title="Acoustic Mic Breath Tracking (Exhale into mic)">
+          <span id="mic-badge-icon">🎙️</span>
+          <span id="mic-badge-text" class="mic-badge-text">Mic Sync</span>
+        </button>
+        <button id="open-heartbeat-btn" class="ekg-badge-btn" title="Tap-to-Sync Heart Rate & HRV Coherence">
+          <span>🫀</span>
+          <span id="ekg-badge-text">Heart Sync</span>
+        </button>
       </div>
 
-      <!-- Sound Settings Toggle -->
-      <button id="sound-settings-btn" class="icon-btn" title="Audio Synthesizer Settings">
-        <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="4" y1="21" x2="4" y2="14"></line>
-          <line x1="4" y1="10" x2="4" y2="3"></line>
-          <line x1="12" y1="21" x2="12" y2="12"></line>
-          <line x1="12" y1="8" x2="12" y2="3"></line>
-          <line x1="20" y1="21" x2="20" y2="16"></line>
-          <line x1="20" y1="12" x2="20" y2="3"></line>
-          <line x1="1" y1="14" x2="7" y2="14"></line>
-          <line x1="9" y1="8" x2="15" y2="8"></line>
-          <line x1="17" y1="16" x2="23" y2="16"></line>
-        </svg>
-      </button>
+      <div class="header-divider" aria-hidden="true"></div>
 
-      <!-- Quick Mute Toggle -->
-      <button id="mute-btn" class="icon-btn" title="Toggle Sound (M)">
-        <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-        </svg>
-      </button>
+      <!-- Cluster 3: Lighting, Circadian & Themes -->
+      <div class="header-cluster" title="Circadian & Themes">
+        <div class="theme-picker" title="Switch Visual Theme">
+          <button class="theme-opt-btn active" data-theme="cosmic" title="Cosmic OLED">🌌</button>
+          <button class="theme-opt-btn" data-theme="sakura" title="Sakura Dusk">🌸</button>
+          <button class="theme-opt-btn" data-theme="forest" title="Forest Zen">🍃</button>
+          <button class="theme-opt-btn" data-theme="solar" title="Solar Dawn">🌅</button>
+        </div>
+        <button id="circadian-btn" class="icon-btn" title="Circadian Solar Clock (Auto-theme based on local time)">
+          <span>🌓</span>
+        </button>
+        <button id="blue-light-btn" class="icon-btn" title="Night-Shift Blue-Light Amber Shield">
+          <span>🌙</span>
+        </button>
+      </div>
 
-      <!-- Distraction-Free Fullscreen -->
-      <button id="fullscreen-btn" class="icon-btn" title="Zen Fullscreen Mode (F)">
-        <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="15 3 21 3 21 9"></polyline>
-          <polyline points="9 21 3 21 3 15"></polyline>
-          <line x1="21" y1="3" x2="14" y2="10"></line>
-          <line x1="3" y1="21" x2="10" y2="14"></line>
-        </svg>
-      </button>
+      <div class="header-divider" aria-hidden="true"></div>
+
+      <!-- Cluster 4: System & Zen Controls -->
+      <div class="header-cluster" title="System Controls">
+        <div class="streak-badge" title="Daily Mindful Reset Streak">
+          <span>🔥</span>
+          <span id="streak-count">1</span> <span style="opacity: 0.8; font-weight: normal;">d</span>
+        </div>
+        <button id="open-shortcuts-btn" class="icon-btn" title="Zen Keyboard Cheatsheet (?)">
+          <span>⌨️</span>
+        </button>
+        <button id="sound-settings-btn" class="icon-btn" title="Audio Synthesizer Settings">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line>
+            <line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line>
+            <line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line>
+            <line x1="17" y1="16" x2="23" y2="16"></line>
+          </svg>
+        </button>
+        <button id="mute-btn" class="icon-btn" title="Toggle Sound (M)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+        </button>
+        <button id="fullscreen-btn" class="icon-btn" title="Zen Fullscreen Mode (F)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline>
+            <line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line>
+          </svg>
+        </button>
+      </div>
     </div>
   </header>
 
@@ -348,6 +347,7 @@
     <div class="sound-control-group">
       <div class="sound-label-row">
         <span>Master Output</span>
+        <span id="master-vol-val" class="vol-pct-badge">75%</span>
       </div>
       <p class="sound-desc">Overall sound balance level</p>
       <input type="range" id="master-vol" min="0" max="1" step="0.05" value="0.75">
@@ -356,6 +356,7 @@
     <div class="sound-control-group">
       <div class="sound-label-row">
         <span>Tibetan Singing Bowl</span>
+        <span id="bell-vol-val" class="vol-pct-badge">90%</span>
       </div>
       <p class="sound-desc">Solfeggio harmonic chime on phase transitions</p>
       <input type="range" id="bell-vol" min="0" max="1" step="0.05" value="0.9">
@@ -364,6 +365,7 @@
     <div class="sound-control-group">
       <div class="sound-label-row">
         <span>Breath-Synced Tidal Wave</span>
+        <span id="wave-vol-val" class="vol-pct-badge">20%</span>
       </div>
       <p class="sound-desc">Real-time modulated acoustic ocean surf</p>
       <input type="range" id="wave-vol" min="0" max="1" step="0.05" value="0.2">
@@ -372,6 +374,7 @@
     <div class="sound-control-group">
       <div class="sound-label-row">
         <span>Deep Brown Noise</span>
+        <span id="noise-vol-val" class="vol-pct-badge">25%</span>
       </div>
       <p class="sound-desc">Warm, low-frequency white/brown noise buffer</p>
       <input type="range" id="noise-vol" min="0" max="1" step="0.05" value="0.25">
@@ -380,6 +383,7 @@
     <div class="sound-control-group">
       <div class="sound-label-row">
         <span>10 Hz Alpha Binaural Drone</span>
+        <span id="binaural-vol-val" class="vol-pct-badge">45%</span>
       </div>
       <p class="sound-desc">Dual carrier wave for relaxed focus (use headphones)</p>
       <input type="range" id="binaural-vol" min="0" max="1" step="0.05" value="0.45">
@@ -406,11 +410,14 @@
     <!-- Isochronic Pulser (Works without headphones!) -->
     <div class="sound-control-group">
       <div class="sound-label-row">
-        <span>Isochronic Pulser (Speaker-Friendly)</span>
+        <div style="display: flex; align-items: center; gap: 0.4rem;">
+          <span>Isochronic Pulser</span>
+          <span id="isochronic-vol-val" class="vol-pct-badge">0%</span>
+        </div>
         <select id="isochronic-rate-select" class="rate-mini-select">
-          <option value="10" selected>Alpha 10Hz (Focus)</option>
-          <option value="6">Theta 6Hz (Deep Calm)</option>
-          <option value="2">Delta 2Hz (Rest)</option>
+          <option value="10" selected>Alpha 10Hz</option>
+          <option value="6">Theta 6Hz</option>
+          <option value="2">Delta 2Hz</option>
         </select>
       </div>
       <p class="sound-desc">Rhythmic brainwave pulse — audible on laptop/phone speakers</p>
@@ -421,6 +428,7 @@
     <div class="sound-control-group">
       <div class="sound-label-row">
         <span>Procedural Rain</span>
+        <span id="rain-vol-val" class="vol-pct-badge">0%</span>
       </div>
       <p class="sound-desc">Algorithmic high-frequency droplet rainfall</p>
       <input type="range" id="rain-vol" min="0" max="1" step="0.05" value="0.0">
@@ -429,7 +437,10 @@
     <!-- Procedural Distant Thunder Synthesizer -->
     <div class="sound-control-group">
       <div class="sound-label-row">
-        <span>Distant Thunder</span>
+        <div style="display: flex; align-items: center; gap: 0.4rem;">
+          <span>Distant Thunder</span>
+          <span id="thunder-vol-val" class="vol-pct-badge">0%</span>
+        </div>
         <button id="trigger-thunder-btn" class="mini-trigger-btn" title="Simulate Rolling Thunder Strike">⚡ Rumble</button>
       </div>
       <p class="sound-desc">Sub-bass rolling acoustic resonance</p>
@@ -555,6 +566,58 @@
         <button id="reset-analytics-btn" class="text-danger-btn" title="Clear local reset history">Clear History</button>
         <button id="close-analytics-modal" class="close-modal-btn">Done</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Zen Keyboard Cheatsheet Modal -->
+  <div id="shortcuts-modal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-card shortcuts-modal-card">
+      <div class="modal-badge">
+        <span>⌨️</span> Zen Keyboard Cheatsheet
+      </div>
+      <h2 class="modal-title">Keyboard Shortcuts</h2>
+      <p class="modal-subtitle">Control your breathwork & synthesizers without touching your mouse.</p>
+
+      <div class="shortcuts-grid">
+        <div class="shortcut-item">
+          <div class="shortcut-keys"><kbd>Space</kbd></div>
+          <div class="shortcut-desc">Start / Pause Breathing Session</div>
+        </div>
+        <div class="shortcut-item">
+          <div class="shortcut-keys"><kbd>A</kbd> – <kbd>L</kbd></div>
+          <div class="shortcut-desc">Play 432Hz Crystal Bowls (D4 to A5)</div>
+        </div>
+        <div class="shortcut-item">
+          <div class="shortcut-keys"><kbd>E</kbd></div>
+          <div class="shortcut-desc">Toggle Bilateral EMDR Eye Guide</div>
+        </div>
+        <div class="shortcut-item">
+          <div class="shortcut-keys"><kbd>F</kbd></div>
+          <div class="shortcut-desc">Toggle Zen Fullscreen Mode</div>
+        </div>
+        <div class="shortcut-item">
+          <div class="shortcut-keys"><kbd>H</kbd></div>
+          <div class="shortcut-desc">Open Heart Rate Tap-to-Sync</div>
+        </div>
+        <div class="shortcut-item">
+          <div class="shortcut-keys"><kbd>M</kbd></div>
+          <div class="shortcut-desc">Mute / Unmute Synthesizers</div>
+        </div>
+        <div class="shortcut-item">
+          <div class="shortcut-keys"><kbd>R</kbd></div>
+          <div class="shortcut-desc">Reset Current Breathing Session</div>
+        </div>
+        <div class="shortcut-item">
+          <div class="shortcut-keys"><kbd>1</kbd> – <kbd>5</kbd></div>
+          <div class="shortcut-desc">Switch Protocols (Box, 4-7-8, Resonant, etc.)</div>
+        </div>
+        <div class="shortcut-item">
+          <div class="shortcut-keys"><kbd>?</kbd></div>
+          <div class="shortcut-desc">Open / Close This Cheatsheet</div>
+        </div>
+      </div>
+
+      <button id="close-shortcuts-modal" class="close-modal-btn" style="width: 100%; margin-top: 1.25rem;">Close (Esc)</button>
     </div>
   </div>
 

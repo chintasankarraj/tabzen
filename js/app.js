@@ -80,6 +80,25 @@ document.addEventListener('DOMContentLoaded', () => {
   const solfeggioValBadge = document.getElementById('solfeggio-val-badge');
   const triggerThunderBtn = document.getElementById('trigger-thunder-btn');
 
+  // Live Volume Percentage Badges
+  const masterVolVal = document.getElementById('master-vol-val');
+  const bellVolVal = document.getElementById('bell-vol-val');
+  const waveVolVal = document.getElementById('wave-vol-val');
+  const noiseVolVal = document.getElementById('noise-vol-val');
+  const binauralVolVal = document.getElementById('binaural-vol-val');
+  const isochronicVolVal = document.getElementById('isochronic-vol-val');
+  const rainVolVal = document.getElementById('rain-vol-val');
+  const thunderVolVal = document.getElementById('thunder-vol-val');
+
+  function updateVolBadge(badgeEl, val) {
+    if (badgeEl) badgeEl.textContent = `${Math.round(val * 100)}%`;
+  }
+
+  // Keyboard Cheatsheet Modal Elements
+  const openShortcutsBtn = document.getElementById('open-shortcuts-btn');
+  const shortcutsModal = document.getElementById('shortcuts-modal');
+  const closeShortcutsModal = document.getElementById('close-shortcuts-modal');
+
   // Video Recording Elements
   const recordVideoBtn = document.getElementById('record-video-btn');
   const recordBtnText = document.getElementById('record-btn-text');
@@ -310,9 +329,24 @@ document.addEventListener('DOMContentLoaded', () => {
         waveVol.value = preset.volumes.wave;
         noiseVol.value = preset.volumes.noise;
         binauralVol.value = preset.volumes.binaural;
-        if (rainVol && preset.volumes.rain !== undefined) rainVol.value = preset.volumes.rain;
-        if (thunderVol && preset.volumes.thunder !== undefined) thunderVol.value = preset.volumes.thunder;
-        if (isochronicVol && preset.volumes.isochronic !== undefined) isochronicVol.value = preset.volumes.isochronic;
+        updateVolBadge(masterVolVal, preset.volumes.master);
+        updateVolBadge(bellVolVal, preset.volumes.bell);
+        updateVolBadge(waveVolVal, preset.volumes.wave);
+        updateVolBadge(noiseVolVal, preset.volumes.noise);
+        updateVolBadge(binauralVolVal, preset.volumes.binaural);
+
+        if (rainVol && preset.volumes.rain !== undefined) {
+          rainVol.value = preset.volumes.rain;
+          updateVolBadge(rainVolVal, preset.volumes.rain);
+        }
+        if (thunderVol && preset.volumes.thunder !== undefined) {
+          thunderVol.value = preset.volumes.thunder;
+          updateVolBadge(thunderVolVal, preset.volumes.thunder);
+        }
+        if (isochronicVol && preset.volumes.isochronic !== undefined) {
+          isochronicVol.value = preset.volumes.isochronic;
+          updateVolBadge(isochronicVolVal, preset.volumes.isochronic);
+        }
       }
     });
   });
@@ -747,6 +781,8 @@ document.addEventListener('DOMContentLoaded', () => {
     onSessionComplete: (stats) => {
       audioEngine.stopAmbience();
       updatePlayBtn(false);
+      document.body.classList.remove('session-active');
+      visualizer.triggerCelebrationBurst(85);
 
       const updated = statsStorage.saveSession(stats.durationSeconds, stats.completedCycles);
       if (streakCountDisplay) streakCountDisplay.textContent = updated.currentStreak;
@@ -872,20 +908,52 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Volume Sliders & Procedural Synthesizers
-  masterVol.addEventListener('input', (e) => audioEngine.setVolume('master', parseFloat(e.target.value)));
-  bellVol.addEventListener('input', (e) => audioEngine.setVolume('bell', parseFloat(e.target.value)));
-  waveVol.addEventListener('input', (e) => audioEngine.setVolume('wave', parseFloat(e.target.value)));
-  noiseVol.addEventListener('input', (e) => audioEngine.setVolume('noise', parseFloat(e.target.value)));
-  binauralVol.addEventListener('input', (e) => audioEngine.setVolume('binaural', parseFloat(e.target.value)));
+  masterVol.addEventListener('input', (e) => {
+    const val = parseFloat(e.target.value);
+    audioEngine.setVolume('master', val);
+    updateVolBadge(masterVolVal, val);
+  });
+  bellVol.addEventListener('input', (e) => {
+    const val = parseFloat(e.target.value);
+    audioEngine.setVolume('bell', val);
+    updateVolBadge(bellVolVal, val);
+  });
+  waveVol.addEventListener('input', (e) => {
+    const val = parseFloat(e.target.value);
+    audioEngine.setVolume('wave', val);
+    updateVolBadge(waveVolVal, val);
+  });
+  noiseVol.addEventListener('input', (e) => {
+    const val = parseFloat(e.target.value);
+    audioEngine.setVolume('noise', val);
+    updateVolBadge(noiseVolVal, val);
+  });
+  binauralVol.addEventListener('input', (e) => {
+    const val = parseFloat(e.target.value);
+    audioEngine.setVolume('binaural', val);
+    updateVolBadge(binauralVolVal, val);
+  });
 
   if (rainVol) {
-    rainVol.addEventListener('input', (e) => audioEngine.setVolume('rain', parseFloat(e.target.value)));
+    rainVol.addEventListener('input', (e) => {
+      const val = parseFloat(e.target.value);
+      audioEngine.setVolume('rain', val);
+      updateVolBadge(rainVolVal, val);
+    });
   }
   if (thunderVol) {
-    thunderVol.addEventListener('input', (e) => audioEngine.setVolume('thunder', parseFloat(e.target.value)));
+    thunderVol.addEventListener('input', (e) => {
+      const val = parseFloat(e.target.value);
+      audioEngine.setVolume('thunder', val);
+      updateVolBadge(thunderVolVal, val);
+    });
   }
   if (isochronicVol) {
-    isochronicVol.addEventListener('input', (e) => audioEngine.setVolume('isochronic', parseFloat(e.target.value)));
+    isochronicVol.addEventListener('input', (e) => {
+      const val = parseFloat(e.target.value);
+      audioEngine.setVolume('isochronic', val);
+      updateVolBadge(isochronicVolVal, val);
+    });
   }
   if (isochronicRateSelect) {
     isochronicRateSelect.addEventListener('change', (e) => audioEngine.setIsochronicRate(e.target.value));
@@ -1103,7 +1171,28 @@ document.addEventListener('DOMContentLoaded', () => {
     customModal.classList.remove('show');
   });
 
-  // Keyboard Shortcuts (Space, F, H, M, R, 1-5, and A-L Crystal Chimes)
+  // Zen Keyboard Shortcuts Modal Handlers
+  if (openShortcutsBtn && shortcutsModal) {
+    openShortcutsBtn.addEventListener('click', () => {
+      shortcutsModal.classList.add('show');
+    });
+  }
+
+  if (closeShortcutsModal && shortcutsModal) {
+    closeShortcutsModal.addEventListener('click', () => {
+      shortcutsModal.classList.remove('show');
+    });
+  }
+
+  if (shortcutsModal) {
+    shortcutsModal.addEventListener('click', (e) => {
+      if (e.target === shortcutsModal) {
+        shortcutsModal.classList.remove('show');
+      }
+    });
+  }
+
+  // Keyboard Shortcuts (Space, F, H, M, R, 1-5, ?, Esc, and A-L Crystal Chimes)
   window.addEventListener('keydown', (e) => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
@@ -1134,6 +1223,17 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (e.key === 'r' || e.key === 'R') {
       e.preventDefault();
       resetBtn.click();
+    } else if (e.key === '?' || (e.key === '/' && e.shiftKey)) {
+      e.preventDefault();
+      if (shortcutsModal) {
+        shortcutsModal.classList.toggle('show');
+      }
+    } else if (e.key === 'Escape') {
+      if (shortcutsModal && shortcutsModal.classList.contains('show')) shortcutsModal.classList.remove('show');
+      if (customModal && customModal.classList.contains('show')) customModal.classList.remove('show');
+      if (analyticsModal && analyticsModal.classList.contains('show')) analyticsModal.classList.remove('show');
+      if (heartbeatModal && heartbeatModal.classList.contains('show')) heartbeatModal.classList.remove('show');
+      if (completionModal && completionModal.classList.contains('show')) completionModal.classList.remove('show');
     } else if (e.key >= '1' && e.key <= '5') {
       const idx = parseInt(e.key, 10) - 1;
       if (protocolPills[idx]) protocolPills[idx].click();

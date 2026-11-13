@@ -40,6 +40,14 @@ Developers and knowledge workers spend 8+ hours a day staring at glowing screens
   - 100% mathematical sound generation simulating high-frequency droplet rainfall and deep acoustic sub-bass thunder rumblers with zero MP3 files.
 - Tracks **Mindful Consistency Analytics & 7-Day Activity Heatmap**:
   - Daily tracking of cumulative mindful minutes, completed resets, estimated O₂ circulated, and a color-coded consistency heatmap.
+- **Zen Keyboard Cheatsheet (<kbd>?</kbd>)**:
+  - Modal overlay giving full transparency into hotkeys for keyboard-first developers.
+- **Dynamic Focus Dimming**:
+  - Automatically dims surrounding UI chrome and header elements to 18% opacity while a breathing session is running, restoring clarity upon completion or pause.
+- **Procedural Stardust Celebration Burst**:
+  - 85-particle radial champagne sparkler burst rendered dynamically on HTML5 Canvas with drag and gravity physics when a reset is completed.
+- **Live Numerical Volume Badges**:
+  - Real-time percentage badges (`75%`, `90%`, etc.) that dynamically reflect exact gains as sliders or soundscape presets change.
 - Features **1-Click Direct LinkedIn Post Composer & Native Device Web Share API**:
   - Automatically formats session reflection text, opens LinkedIn's feed composer, and generates a 1200x675 PNG share card.
 - Features **interactive mouse & mobile gyro parallax physics** with magnetic particle repulsion.
@@ -111,6 +119,8 @@ Then visit `http://localhost:8080`.
 - <kbd>M</kbd> — Quick Audio Mute / Unmute
 - <kbd>R</kbd> — Reset Current Session
 - <kbd>1</kbd> - <kbd>5</kbd> — Switch Breathing Protocols
+- <kbd>?</kbd> — Toggle Zen Keyboard Cheatsheet Modal
+- <kbd>Esc</kbd> — Close Active Modal Overlay
 
 ---
 

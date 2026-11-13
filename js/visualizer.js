@@ -100,6 +100,9 @@ class ZenVisualizer {
     this.particles = [];
     this.numParticles = 85;
 
+    // Celebration Stardust Particles
+    this.celebrationParticles = [];
+
     this._initResize();
     this._initInteractivity();
     this._initParticles();
@@ -153,6 +156,31 @@ class ZenVisualizer {
       alpha: 0.85,
       color: ripColor
     });
+  }
+
+  triggerCelebrationBurst(count = 75) {
+    const colors = ['#fbbf24', '#2dd4bf', '#ffffff', '#c084fc', '#f43f5e', '#38bdf8'];
+    const originX = this.centerX + this.mouseX;
+    const originY = this.centerY + this.mouseY;
+
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 2.5 + Math.random() * 8.5;
+      this.celebrationParticles.push({
+        x: originX,
+        y: originY,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - (Math.random() * 2.2), // slight upward bias
+        size: 2 + Math.random() * 4.5,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        alpha: 1,
+        decay: 0.012 + Math.random() * 0.016,
+        drag: 0.965,
+        gravity: 0.08,
+        spin: (Math.random() - 0.5) * 0.2,
+        rotation: Math.random() * Math.PI * 2
+      });
+    }
   }
 
   _initResize() {
@@ -285,6 +313,50 @@ class ZenVisualizer {
     if (this.heartRate) {
       this._renderEKG(ctx, palette);
     }
+
+    // 7. Stardust Celebration Burst (on session completion)
+    this._renderCelebration(ctx);
+  }
+
+  _renderCelebration(ctx) {
+    if (this.celebrationParticles.length === 0) return;
+
+    ctx.save();
+    for (let i = this.celebrationParticles.length - 1; i >= 0; i--) {
+      const p = this.celebrationParticles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vx *= p.drag;
+      p.vy = p.vy * p.drag + p.gravity;
+      p.rotation += p.spin;
+      p.alpha -= p.decay;
+
+      if (p.alpha <= 0.01) {
+        this.celebrationParticles.splice(i, 1);
+        continue;
+      }
+
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rotation);
+      ctx.globalAlpha = Math.max(0, p.alpha);
+      ctx.fillStyle = p.color;
+      ctx.shadowColor = p.color;
+      ctx.shadowBlur = 10;
+
+      // Draw diamond / 4-point star sparkle
+      ctx.beginPath();
+      const s = p.size;
+      ctx.moveTo(0, -s);
+      ctx.lineTo(s * 0.4, 0);
+      ctx.lineTo(0, s);
+      ctx.lineTo(-s * 0.4, 0);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.restore();
+    }
+    ctx.restore();
   }
 
   _renderEMDRGuide(ctx, palette, cX, cY) {
