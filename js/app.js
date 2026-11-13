@@ -59,6 +59,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const applyHeartbeatBtn = document.getElementById('apply-heartbeat-btn');
   const closeHeartbeatModal = document.getElementById('close-heartbeat-modal');
 
+  // Mic Breath, Circadian, Blue-Light & EMDR Elements
+  const micBreathBtn = document.getElementById('mic-breath-btn');
+  const micBadgeText = document.getElementById('mic-badge-text');
+  const circadianBtn = document.getElementById('circadian-btn');
+  const blueLightBtn = document.getElementById('blue-light-btn');
+  const emdrToggleBtn = document.getElementById('emdr-toggle-btn');
+
   // Audio Sliders & Synthesizers
   const masterVol = document.getElementById('master-vol');
   const bellVol = document.getElementById('bell-vol');
@@ -554,6 +561,98 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
   });
 
+  // Circadian Solar Clock Engine (Auto-Theme Based on Local Time)
+  let isCircadianActive = false;
+  function getCircadianThemeForNow() {
+    const hour = new Date().getHours();
+    if (hour >= 6 && hour < 11) return 'solar';   // Solar Dawn (morning energize)
+    if (hour >= 11 && hour < 17) return 'forest'; // Forest Zen (midday deep focus)
+    if (hour >= 17 && hour < 21) return 'sakura'; // Sakura Dusk (evening wind-down)
+    return 'cosmic';                              // Cosmic OLED (night reset)
+  }
+
+  if (circadianBtn) {
+    circadianBtn.addEventListener('click', () => {
+      isCircadianActive = !isCircadianActive;
+      circadianBtn.classList.toggle('active', isCircadianActive);
+      if (isCircadianActive) {
+        const targetTheme = getCircadianThemeForNow();
+        applyTheme(targetTheme);
+        shareFeedback.textContent = `🌓 Circadian Solar Mode ON: Synced to ${targetTheme.toUpperCase()} theme`;
+        shareFeedback.classList.add('visible');
+        setTimeout(() => shareFeedback.classList.remove('visible'), 4000);
+      } else {
+        shareFeedback.textContent = 'Circadian Mode OFF (Manual Theme)';
+        shareFeedback.classList.add('visible');
+        setTimeout(() => shareFeedback.classList.remove('visible'), 2500);
+      }
+    });
+  }
+
+  // Night-Shift Blue-Light Shield (2700K Warm Melatonin Protection)
+  let isBlueLightShield = false;
+  if (blueLightBtn) {
+    blueLightBtn.addEventListener('click', () => {
+      isBlueLightShield = !isBlueLightShield;
+      document.body.classList.toggle('blue-light-shield', isBlueLightShield);
+      blueLightBtn.classList.toggle('active', isBlueLightShield);
+      visualizer.setBlueLightFilter(isBlueLightShield);
+      shareFeedback.textContent = isBlueLightShield 
+        ? '🌙 Night-Shift Blue-Light Shield ON (Warm 2700K Amber)' 
+        : 'Blue-Light Shield OFF';
+      shareFeedback.classList.add('visible');
+      setTimeout(() => shareFeedback.classList.remove('visible'), 3000);
+    });
+  }
+
+  // Acoustic Microphone Breath Follower ("Live Breath Tracking")
+  let isMicTracking = false;
+  if (micBreathBtn) {
+    micBreathBtn.addEventListener('click', async () => {
+      if (!isMicTracking) {
+        try {
+          await audioEngine.startMicBreathDetection((energy) => {
+            visualizer.setMicEnergy(energy);
+          });
+          isMicTracking = true;
+          micBreathBtn.classList.add('active');
+          if (micBadgeText) micBadgeText.textContent = 'Live Breath';
+          shareFeedback.textContent = '🎙️ Mic Breath Active: Exhale softly to expand visualizer!';
+          shareFeedback.classList.add('visible');
+          setTimeout(() => shareFeedback.classList.remove('visible'), 4000);
+        } catch (err) {
+          alert('Microphone access blocked or unavailable: ' + err.message);
+        }
+      } else {
+        audioEngine.stopMicBreathDetection();
+        visualizer.setMicEnergy(0);
+        isMicTracking = false;
+        micBreathBtn.classList.remove('active');
+        if (micBadgeText) micBadgeText.textContent = 'Mic Sync';
+        shareFeedback.textContent = 'Mic Breath Follower paused';
+        shareFeedback.classList.add('visible');
+        setTimeout(() => shareFeedback.classList.remove('visible'), 2500);
+      }
+    });
+  }
+
+  // Bilateral EMDR Anxiety Relief Guide
+  let isEMDRActive = false;
+  function toggleEMDR() {
+    isEMDRActive = !isEMDRActive;
+    if (emdrToggleBtn) emdrToggleBtn.classList.toggle('active', isEMDRActive);
+    visualizer.setEMDREnabled(isEMDRActive);
+    shareFeedback.textContent = isEMDRActive 
+      ? '👁️ Bilateral EMDR Guide ON: Follow the light with your eyes' 
+      : 'EMDR Guide OFF';
+    shareFeedback.classList.add('visible');
+    setTimeout(() => shareFeedback.classList.remove('visible'), 3000);
+  }
+
+  if (emdrToggleBtn) {
+    emdrToggleBtn.addEventListener('click', toggleEMDR);
+  }
+
   const currentStats = statsStorage.get();
   if (streakCountDisplay) streakCountDisplay.textContent = currentStats.currentStreak;
 
@@ -1023,6 +1122,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (e.key === 'f' || e.key === 'F') {
       e.preventDefault();
       toggleZenFullscreen();
+    } else if (e.key === 'e' || e.key === 'E') {
+      e.preventDefault();
+      toggleEMDR();
     } else if (e.key === 'h' || e.key === 'H') {
       e.preventDefault();
       openHeartbeatBtn.click();

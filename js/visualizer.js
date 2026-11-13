@@ -72,6 +72,15 @@ class ZenVisualizer {
     this.isCoherenceLocked = false;
     this.ekgOffset = 0;
 
+    // Acoustic Microphone Breath Energy (0 - 1)
+    this.micEnergy = 0;
+
+    // Bilateral EMDR Anxiety Relief Guide
+    this.isEMDREnabled = false;
+
+    // Night-Shift Blue-Light Filter
+    this.isBlueLightFilter = false;
+
     // Interactive Keyboard Crystal Bowl Ripples
     this.ripples = [];
 
@@ -117,6 +126,18 @@ class ZenVisualizer {
   setHeartRate(bpm, isCoherenceLocked = false) {
     this.heartRate = bpm;
     this.isCoherenceLocked = isCoherenceLocked;
+  }
+
+  setMicEnergy(energy) {
+    this.micEnergy = Math.max(0, Math.min(1, energy));
+  }
+
+  setEMDREnabled(enabled) {
+    this.isEMDREnabled = Boolean(enabled);
+  }
+
+  setBlueLightFilter(enabled) {
+    this.isBlueLightFilter = Boolean(enabled);
   }
 
   triggerRipple(x = null, y = null, color = null) {
@@ -255,10 +276,65 @@ class ZenVisualizer {
     // 4. Circular Progress Arc
     this._renderProgressArc(ctx, palette, currentRadius, dynamicCenterX, dynamicCenterY);
 
-    // 5. Live Cardiac EKG & Coherence Waveform (if active)
+    // 5. Bilateral EMDR Anxiety Relief Guide (if active)
+    if (this.isEMDREnabled) {
+      this._renderEMDRGuide(ctx, palette, dynamicCenterX, dynamicCenterY);
+    }
+
+    // 6. Live Cardiac EKG & Coherence Waveform (if active)
     if (this.heartRate) {
       this._renderEKG(ctx, palette);
     }
+  }
+
+  _renderEMDRGuide(ctx, palette, cX, cY) {
+    ctx.save();
+    const trackY = Math.min(this.height * 0.22, 110);
+    const trackWidth = this.width * 0.82;
+    const trackLeft = cX - trackWidth / 2;
+    const trackRight = cX + trackWidth / 2;
+
+    // Draw dashed guide rail
+    ctx.beginPath();
+    ctx.moveTo(trackLeft, trackY);
+    ctx.lineTo(trackRight, trackY);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 6]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Smooth horizontal bilateral saccade (0.35 Hz sinusoidal pacing)
+    const emdrPhase = (Math.sin(this.time * 2.2) + 1) / 2; // 0 to 1
+    const beaconX = trackLeft + emdrPhase * trackWidth;
+
+    // Luminous Beacon Halo
+    const beaconColor = this.isBlueLightFilter ? '#f59e0b' : palette.ring;
+    const beaconGrad = ctx.createRadialGradient(beaconX, trackY, 2, beaconX, trackY, 32);
+    beaconGrad.addColorStop(0, '#ffffff');
+    beaconGrad.addColorStop(0.35, beaconColor);
+    beaconGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+    ctx.beginPath();
+    ctx.arc(beaconX, trackY, 32, 0, Math.PI * 2);
+    ctx.fillStyle = beaconGrad;
+    ctx.fill();
+
+    // Central Beacon Pip
+    ctx.beginPath();
+    ctx.arc(beaconX, trackY, 7.5, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = beaconColor;
+    ctx.shadowBlur = 20;
+    ctx.fill();
+
+    // Guidance text
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.font = '600 11.5px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('👁️ Follow the moving light with your eyes (Bilateral EMDR)', cX, trackY - 16);
+
+    ctx.restore();
   }
 
   _renderRipples(ctx) {
@@ -347,6 +423,8 @@ class ZenVisualizer {
 
     const freqData = audioData ? audioData.freqData : null;
     const audioEnergy = audioData ? audioData.energy : 0;
+    const micBoost = this.micEnergy * 28;
+    const totalEnergy = Math.min(1.0, audioEnergy + this.micEnergy * 0.5);
 
     const ringCounts = [
       { rFactor: 1.45, freq: 4, amp: 7, speed: 0.9, alpha: 0.16 },
@@ -355,7 +433,7 @@ class ZenVisualizer {
     ];
 
     ringCounts.forEach((ring, ringIdx) => {
-      const r = radius * ring.rFactor;
+      const r = (radius + micBoost) * ring.rFactor;
       ctx.beginPath();
       
       let stepIdx = 0;
@@ -375,15 +453,15 @@ class ZenVisualizer {
         stepIdx++;
       }
       ctx.closePath();
-      ctx.strokeStyle = palette.ring;
-      ctx.lineWidth = 1.5 + (audioEnergy * 2.5);
-      ctx.globalAlpha = Math.min(0.9, ring.alpha + (audioEnergy * 0.4));
+      ctx.strokeStyle = this.isBlueLightFilter ? '#f59e0b' : palette.ring;
+      ctx.lineWidth = 1.5 + (totalEnergy * 2.5);
+      ctx.globalAlpha = Math.min(0.95, ring.alpha + (totalEnergy * 0.4));
       ctx.stroke();
     });
 
-    const bgRadius = radius * (2.1 + audioEnergy * 0.5);
+    const bgRadius = (radius + micBoost) * (2.1 + totalEnergy * 0.5);
     const bgGlow = ctx.createRadialGradient(cX, cY, radius * 0.3, cX, cY, bgRadius);
-    bgGlow.addColorStop(0, palette.outer);
+    bgGlow.addColorStop(0, this.isBlueLightFilter ? 'rgba(245, 158, 11, 0.18)' : palette.outer);
     bgGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
     ctx.fillStyle = bgGlow;
     ctx.beginPath();
@@ -397,19 +475,20 @@ class ZenVisualizer {
     ctx.save();
 
     const bassBoost = audioData ? audioData.bass * 8 : 0;
-    const effectiveRadius = radius + bassBoost;
+    const micBoost = this.micEnergy * 18;
+    const effectiveRadius = radius + bassBoost + micBoost;
 
     const grad = ctx.createRadialGradient(
       cX, cY, effectiveRadius * 0.05,
       cX, cY, effectiveRadius
     );
     grad.addColorStop(0, '#ffffff');
-    grad.addColorStop(0.25, palette.core1);
-    grad.addColorStop(0.7, palette.core2);
+    grad.addColorStop(0.25, this.isBlueLightFilter ? '#f59e0b' : palette.core1);
+    grad.addColorStop(0.7, this.isBlueLightFilter ? '#d97706' : palette.core2);
     grad.addColorStop(1, 'rgba(15, 23, 42, 0.15)');
 
-    ctx.shadowColor = palette.ring;
-    ctx.shadowBlur = (35 + (audioData ? audioData.energy * 25 : 0)) * this.currentScale;
+    ctx.shadowColor = this.isBlueLightFilter ? '#f59e0b' : palette.ring;
+    ctx.shadowBlur = (35 + (audioData ? audioData.energy * 25 : 0) + this.micEnergy * 20) * this.currentScale;
     ctx.fillStyle = grad;
     ctx.beginPath();
     ctx.arc(cX, cY, effectiveRadius, 0, Math.PI * 2);

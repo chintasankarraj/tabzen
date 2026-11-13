@@ -22,6 +22,13 @@ Developers and knowledge workers spend 8+ hours a day staring at glowing screens
   - **🔮 Organic Orb** (Classic glowing aura and particle sphere)
   - **🪷 Sacred Mandala** (8-fold kaleidoscopic blooming lotus with golden ratio geometry)
   - **〰️ Liquid Silk** (Fluid undulating sinusoidal ribbons)
+- **Acoustic Microphone Breath Follower ("Live Breath Tracking")**:
+  - Optional real-time mic tracking via Web Audio RMS envelope analysis; exhaling into your mic expands and brightens the visualizer's aura in response to your physical lungs!
+- **Bilateral EMDR Eye Movement Calming Guide** (<kbd>E</kbd> key):
+  - Clinical psychotherapeutic eye-tracking guide: a luminous beacon glides horizontally across the screen to rapidly downshift an overactive amygdala and dissolve acute stress.
+- **Circadian Solar Clock & Night-Shift Blue-Light Shield**:
+  - Automatically glides through morning Solar Dawn, midday Forest Zen, evening Sakura Dusk, and midnight Cosmic OLED.
+  - 1-click Night-Shift warm amber filter (2700K) to protect melatonin production for late-night developers.
 - Features an **Interactive 432Hz Pentatonic Crystal Bowl Instrument** (<kbd>A</kbd> - <kbd>L</kbd> keys & on-screen dock):
   - Play 9 tuned Solfeggio singing bowls (D4 to A5 harmonic spectrum) that trigger physical, expanding shockwave ripples across the canvas!
 - **Native 10-Second HD Video Clip Recorder** (`canvas.captureStream` + `MediaRecorder`):
@@ -71,6 +78,9 @@ Then visit `http://localhost:8080`.
 
 | Component | Technical Implementation |
 |---|---|
+| **Acoustic Breath Follower** | `getUserMedia({ audio: true })` + Web Audio `AnalyserNode` bandpass (250Hz–1600Hz) envelope follower modulates canvas aura in real-time response to physical exhalations. |
+| **Bilateral EMDR Guide** | Sinusoidal 0.35 Hz bilateral horizontal beacon for clinical saccadic eye-movement anxiety relief. |
+| **Circadian & Blue-Light Shield** | Local solar clock auto-theme shifting + 2700K warm chromatic filter removing high-frequency blue canvas emissions. |
 | **10s HD Video Clip Recorder** | Hardware-accelerated `canvas.captureStream(60)` blended with Web Audio `createMediaStreamDestination()` tracks via `MediaRecorder` into ready-to-share 60 FPS WebM video clips. |
 | **Solfeggio & Isochronic Pulser** | 7 Sacred Solfeggio frequencies (396Hz to 963Hz) + speaker-friendly amplitude-modulated square wave pulses (Alpha 10Hz, Theta 6Hz, Delta 2Hz). |
 | **Procedural Rain & Thunder** | Algorithmic stochastic white noise pass-through with micro-droplet click synthesis and resonant low-pass brown noise rolling thunder bursts. |
@@ -95,6 +105,7 @@ Then visit `http://localhost:8080`.
 
 - <kbd>Space</kbd> — Start / Pause Reset Session
 - <kbd>A</kbd> - <kbd>L</kbd> — Play 432Hz Pentatonic Crystal Bowls
+- <kbd>E</kbd> — Toggle Bilateral EMDR Eye Movement Guide
 - <kbd>F</kbd> — Toggle Zen Fullscreen Mode
 - <kbd>H</kbd> — Open Heartbeat Tap-to-Sync Modal
 - <kbd>M</kbd> — Quick Audio Mute / Unmute

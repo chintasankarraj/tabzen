@@ -84,6 +84,14 @@ class ZenAudioEngine {
     // Solfeggio Sacred Tuning (Hz)
     this.solfeggioFreq = 432;
 
+    // Acoustic Microphone Breath Follower
+    this.micStream = null;
+    this.micSource = null;
+    this.micAnalyser = null;
+    this.micData = null;
+    this.micInterval = null;
+    this.isMicActive = false;
+
     // Volumes (0 - 1)
     this.volumes = {
       master: 0.75,
@@ -236,6 +244,66 @@ class ZenAudioEngine {
     this.is8DEnabled = enabled;
     if (!enabled && this.spatialPanner && this.ctx) {
       this.spatialPanner.pan.setTargetAtTime(0, this.ctx.currentTime, 0.2);
+    }
+  }
+
+  /**
+   * Starts Acoustic Breath Detection via microphone input
+   * @param {function} onEnergyUpdate - Callback receives 0.0 - 1.0 breath energy
+   */
+  async startMicBreathDetection(onEnergyUpdate) {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error('Microphone not supported on this browser.');
+    }
+    await this.resume();
+
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    this.micStream = stream;
+    this.micSource = this.ctx.createMediaStreamSource(stream);
+
+    // Bandpass filter to isolate breath / human airflow frequencies (250Hz - 1600Hz)
+    const breathFilter = this.ctx.createBiquadFilter();
+    breathFilter.type = 'bandpass';
+    breathFilter.frequency.setValueAtTime(650, this.ctx.currentTime);
+    breathFilter.Q.setValueAtTime(1.0, this.ctx.currentTime);
+
+    this.micAnalyser = this.ctx.createAnalyser();
+    this.micAnalyser.fftSize = 256;
+    this.micAnalyser.smoothingTimeConstant = 0.65;
+    this.micData = new Uint8Array(this.micAnalyser.frequencyBinCount);
+
+    this.micSource.connect(breathFilter);
+    breathFilter.connect(this.micAnalyser);
+
+    this.isMicActive = true;
+
+    // Real-time acoustic energy follower loop
+    this.micInterval = setInterval(() => {
+      if (!this.isMicActive || !this.micAnalyser) return;
+      this.micAnalyser.getByteFrequencyData(this.micData);
+      let sum = 0;
+      for (let i = 0; i < this.micData.length; i++) {
+        sum += this.micData[i];
+      }
+      const rawLevel = sum / (this.micData.length * 255);
+      const threshold = 0.08;
+      const energy = rawLevel > threshold ? Math.min(1.0, (rawLevel - threshold) * 3.5) : 0;
+      if (onEnergyUpdate) onEnergyUpdate(energy);
+    }, 45);
+
+    return true;
+  }
+
+  stopMicBreathDetection() {
+    this.isMicActive = false;
+    if (this.micInterval) clearInterval(this.micInterval);
+    if (this.micStream) {
+      this.micStream.getTracks().forEach(t => t.stop());
+      this.micStream = null;
+    }
+    if (this.micSource) {
+      try { this.micSource.disconnect(); } catch (e) {}
+      this.micSource = null;
     }
   }
 

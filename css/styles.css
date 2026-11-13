@@ -1360,6 +1360,83 @@ body.zen-mode .visualizer-container {
   background: rgba(244, 63, 94, 0.1);
 }
 
+/* Acoustic Mic Breath Button */
+.mic-badge-btn {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #34d399;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mic-badge-btn:hover {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.6);
+  transform: translateY(-1px);
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.3);
+}
+
+.mic-badge-btn.active {
+  background: rgba(16, 185, 129, 0.25);
+  border-color: #10b981;
+  color: #ffffff;
+  animation: pulse-green 1.2s infinite alternate;
+}
+
+@keyframes pulse-green {
+  from { box-shadow: 0 0 8px rgba(16, 185, 129, 0.4); }
+  to { box-shadow: 0 0 22px rgba(16, 185, 129, 0.8); }
+}
+
+/* Bilateral EMDR Guide Button */
+.emdr-pill-btn {
+  background: transparent;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  color: var(--text-faint);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.4rem 0.9rem;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.2s ease;
+}
+
+.emdr-pill-btn:hover {
+  color: var(--text-main);
+  border-color: var(--phase-accent);
+}
+
+.emdr-pill-btn.active {
+  background: rgba(255, 255, 255, 0.1);
+  border-style: solid;
+  border-color: var(--phase-accent);
+  color: var(--phase-accent);
+  box-shadow: 0 0 16px var(--phase-accent-glow);
+}
+
+/* Circadian & Blue-Light Shield Buttons */
+.icon-btn.active {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: var(--phase-accent);
+  color: var(--phase-accent);
+  box-shadow: 0 0 14px var(--phase-accent-glow);
+}
+
+body.blue-light-shield {
+  filter: sepia(0.3) saturate(1.15) hue-rotate(-12deg);
+  transition: filter 0.5s ease;
+}
+
 /* Video Clip Recorder Button */
 .video-record-btn {
   background: rgba(239, 68, 68, 0.1);
