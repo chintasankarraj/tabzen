@@ -145,8 +145,8 @@ Here's why it was such a fun technical challenge:
 
 Built with pure vanilla HTML, modern CSS, and JavaScript — zero frameworks, zero build steps.
 
-Live Demo: [YOUR LIVE LINK]
-GitHub: [YOUR GITHUB REPO LINK]
+Live Demo: https://chintasankarraj.github.io/tabzen/
+GitHub: https://github.com/chintasankarraj/tabzen
 
 How do you stay mindful during deep work sessions? Let me know below! 👇
 
