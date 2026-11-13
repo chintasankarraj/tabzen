@@ -1,7 +1,10 @@
 /**
  * TabZen Web Audio Synthesizer
  * 100% procedural sound synthesis using the Web Audio API.
- * Features real-time AnalyserNode FFT output, 8D Spatial Audio Panning, and 1-click sound presets.
+ * Features:
+ * - Real-time AnalyserNode FFT output
+ * - 8D Spatial Audio Panning & 1-click sound presets
+ * - Interactive 9-Note 432Hz Solfeggio Pentatonic Crystal Bowl Synthesizer (A-L keys)
  */
 
 const SOUND_PRESETS = {
@@ -77,6 +80,19 @@ class ZenAudioEngine {
       exhale: [396, 792, 1188],       // Grounding 396Hz release
       rest: [288, 576, 864]
     };
+
+    // 9-Note 432Hz Solfeggio Pentatonic Scale (Cannot hit a bad note)
+    this.crystalNotes = [
+      { key: 'A', name: 'D4', freq: 288 },
+      { key: 'S', name: 'E4', freq: 324 },
+      { key: 'D', name: 'G4', freq: 384 },
+      { key: 'F', name: 'A4', freq: 432 }, // Sacred 432Hz
+      { key: 'G', name: 'B4', freq: 486 },
+      { key: 'H', name: 'D5', freq: 576 },
+      { key: 'J', name: 'E5', freq: 648 },
+      { key: 'K', name: 'G5', freq: 768 },
+      { key: 'L', name: 'A5', freq: 864 }
+    ];
   }
 
   init() {
@@ -287,6 +303,53 @@ class ZenAudioEngine {
     });
   }
 
+  /**
+   * Plays an interactive tuned Solfeggio Pentatonic note (A-L keys)
+   * @param {number} noteIdx - 0 to 8
+   */
+  playTunedNote(noteIdx) {
+    if (this.isMuted || !this.ctx || noteIdx < 0 || noteIdx >= this.crystalNotes.length) return null;
+    const note = this.crystalNotes[noteIdx];
+    const now = this.ctx.currentTime;
+    const fundamental = note.freq;
+
+    const overtones = [
+      { mult: 1.0, gain: 0.35, decay: 3.2 },
+      { mult: 2.76, gain: 0.16, decay: 1.8 },
+      { mult: 5.4, gain: 0.08, decay: 1.1 }
+    ];
+
+    overtones.forEach((ot) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const panner = this.ctx.createStereoPanner ? this.ctx.createStereoPanner() : null;
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(fundamental * ot.mult, now);
+
+      const amp = ot.gain * this.volumes.bell;
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(amp, now + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.00001, now + ot.decay);
+
+      if (panner) {
+        const pan = ((noteIdx / (this.crystalNotes.length - 1)) - 0.5) * 0.7;
+        panner.pan.setValueAtTime(pan, now);
+        osc.connect(gain);
+        gain.connect(panner);
+        panner.connect(this.bellGain);
+      } else {
+        osc.connect(gain);
+        gain.connect(this.bellGain);
+      }
+
+      osc.start(now);
+      osc.stop(now + ot.decay + 0.1);
+    });
+
+    return note;
+  }
+
   updateBreathWave(phase, progress) {
     if (!this.ctx || !this.waveGain || !this.waveFilter) return;
 
@@ -316,7 +379,7 @@ class ZenAudioEngine {
     // 8D Spatial Audio: Orbit pan angle in circle
     if (this.is8DEnabled && this.spatialPanner) {
       this.panAngle += 0.015;
-      const panValue = Math.sin(this.panAngle) * 0.85; // smooth orbit from -0.85 to +0.85
+      const panValue = Math.sin(this.panAngle) * 0.85;
       this.spatialPanner.pan.setTargetAtTime(panValue, now, 0.08);
     }
   }

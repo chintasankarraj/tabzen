@@ -4,6 +4,7 @@
  * Features:
  * - 3 Visualizer Modes: Organic Orb, Sacred Mandala, Liquid Silk
  * - Interactive Mouse Magnetic Physics & Mobile Gyro Parallax
+ * - Interactive Crystal Singing Bowl Shockwave Ripples (A-L keys)
  * - Real-Time Web Audio FFT Reactive Waves & customizable mood themes
  * - Real-Time Hospital-Grade Glowing EKG Pulse Wave & Cardiac Coherence HUD
  */
@@ -67,10 +68,12 @@ class ZenVisualizer {
     this.progress = 0;
 
     // Cardiac Coherence & EKG State
-    this.heartRate = null; // e.g. 72 BPM
+    this.heartRate = null;
     this.isCoherenceLocked = false;
-    this.ekgPoints = [];
     this.ekgOffset = 0;
+
+    // Interactive Keyboard Crystal Bowl Ripples
+    this.ripples = [];
 
     // Interactive Parallax Physics (Mouse & Gyro)
     this.mouseX = 0;
@@ -114,6 +117,21 @@ class ZenVisualizer {
   setHeartRate(bpm, isCoherenceLocked = false) {
     this.heartRate = bpm;
     this.isCoherenceLocked = isCoherenceLocked;
+  }
+
+  triggerRipple(x = null, y = null, color = null) {
+    const ripX = x !== null ? x : (this.centerX + this.mouseX);
+    const ripY = y !== null ? y : (this.centerY + this.mouseY);
+    const ripColor = color || (this.theme[this.phase] ? this.theme[this.phase].ring : '#2dd4bf');
+
+    this.ripples.push({
+      x: ripX,
+      y: ripY,
+      radius: 10,
+      maxRadius: 280,
+      alpha: 0.85,
+      color: ripColor
+    });
   }
 
   _initResize() {
@@ -221,7 +239,10 @@ class ZenVisualizer {
     // 1. Ambient Particles
     this._renderParticles(ctx, palette, currentRadius, audioData, dynamicCenterX, dynamicCenterY);
 
-    // 2. Visualizer Mode
+    // 2. Crystal Bowl Ripples
+    this._renderRipples(ctx);
+
+    // 3. Visualizer Mode
     if (this.mode === 'mandala') {
       this._renderMandala(ctx, palette, currentRadius, audioData, dynamicCenterX, dynamicCenterY);
     } else if (this.mode === 'silk') {
@@ -231,43 +252,69 @@ class ZenVisualizer {
       this._renderCore(ctx, palette, currentRadius, audioData, dynamicCenterX, dynamicCenterY);
     }
 
-    // 3. Circular Progress Arc
+    // 4. Circular Progress Arc
     this._renderProgressArc(ctx, palette, currentRadius, dynamicCenterX, dynamicCenterY);
 
-    // 4. Live Cardiac EKG & Coherence Waveform (if active)
+    // 5. Live Cardiac EKG & Coherence Waveform (if active)
     if (this.heartRate) {
       this._renderEKG(ctx, palette);
     }
   }
 
-  /**
-   * Hospital-Grade Glowing EKG Waveform & Cardiac Coherence HUD
-   */
+  _renderRipples(ctx) {
+    if (this.ripples.length === 0) return;
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+
+    for (let i = this.ripples.length - 1; i >= 0; i--) {
+      const rip = this.ripples[i];
+      rip.radius += 5.5;
+      rip.alpha *= 0.94;
+
+      if (rip.alpha <= 0.02 || rip.radius >= rip.maxRadius) {
+        this.ripples.splice(i, 1);
+        continue;
+      }
+
+      ctx.beginPath();
+      ctx.arc(rip.x, rip.y, rip.radius, 0, Math.PI * 2);
+      ctx.strokeStyle = rip.color;
+      ctx.lineWidth = 2.5 * rip.alpha;
+      ctx.globalAlpha = rip.alpha;
+      ctx.shadowColor = rip.color;
+      ctx.shadowBlur = 16;
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
   _renderEKG(ctx, palette) {
     ctx.save();
 
     const ekgY = this.height - 32;
     const ekgW = this.width * 0.85;
     const startX = this.centerX - ekgW / 2;
-    const speed = (this.heartRate / 60) * 4; // BPM driven speed
+    const speed = (this.heartRate / 60) * 4;
     this.ekgOffset = (this.ekgOffset + speed) % ekgW;
 
     ctx.beginPath();
     for (let x = 0; x <= ekgW; x += 3) {
       const progressAlong = (x + this.ekgOffset) % ekgW;
-      const cyclePos = (progressAlong % 120) / 120; // 120px heartbeat cycle
+      const cyclePos = (progressAlong % 120) / 120;
 
       let yOffset = 0;
-      if (cyclePos > 0.35 && cyclePos < 0.42) { // P-wave
+      if (cyclePos > 0.35 && cyclePos < 0.42) {
         yOffset = -Math.sin(((cyclePos - 0.35) / 0.07) * Math.PI) * 5;
-      } else if (cyclePos >= 0.42 && cyclePos < 0.45) { // Q-dip
+      } else if (cyclePos >= 0.42 && cyclePos < 0.45) {
         yOffset = 3;
-      } else if (cyclePos >= 0.45 && cyclePos < 0.52) { // QRS sharp spike
+      } else if (cyclePos >= 0.45 && cyclePos < 0.52) {
         const spikeProg = (cyclePos - 0.45) / 0.07;
         yOffset = -Math.sin(spikeProg * Math.PI) * 26;
-      } else if (cyclePos >= 0.52 && cyclePos < 0.56) { // S-dip
+      } else if (cyclePos >= 0.52 && cyclePos < 0.56) {
         yOffset = 4;
-      } else if (cyclePos >= 0.65 && cyclePos < 0.80) { // T-wave
+      } else if (cyclePos >= 0.65 && cyclePos < 0.80) {
         yOffset = -Math.sin(((cyclePos - 0.65) / 0.15) * Math.PI) * 7;
       }
 
@@ -278,7 +325,7 @@ class ZenVisualizer {
       else ctx.lineTo(drawX, drawY);
     }
 
-    const ekgColor = this.isCoherenceLocked ? '#f59e0b' : '#2dd4bf'; // Golden amber when locked, teal otherwise
+    const ekgColor = this.isCoherenceLocked ? '#f59e0b' : '#2dd4bf';
     ctx.strokeStyle = ekgColor;
     ctx.lineWidth = 1.8;
     ctx.shadowColor = ekgColor;
@@ -286,7 +333,6 @@ class ZenVisualizer {
     ctx.globalAlpha = 0.75;
     ctx.stroke();
 
-    // Small glowing lead indicator dot
     ctx.beginPath();
     ctx.arc(startX + ekgW - 5, ekgY, 3, 0, Math.PI * 2);
     ctx.fillStyle = '#ffffff';

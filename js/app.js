@@ -80,9 +80,26 @@ document.addEventListener('DOMContentLoaded', () => {
   const customExhaleVal = document.getElementById('custom-exhale-val');
   const customRestVal = document.getElementById('custom-rest-val');
 
+  // Analytics Modal Elements
+  const openAnalyticsBtn = document.getElementById('open-analytics-btn');
+  const analyticsModal = document.getElementById('analytics-modal');
+  const closeAnalyticsModal = document.getElementById('close-analytics-modal');
+  const resetAnalyticsBtn = document.getElementById('reset-analytics-btn');
+  const analyticsTotalMinutes = document.getElementById('analytics-total-minutes');
+  const analyticsTotalBreaths = document.getElementById('analytics-total-breaths');
+  const analyticsOxygen = document.getElementById('analytics-oxygen');
+  const analyticsStreak = document.getElementById('analytics-streak');
+  const heatmapGrid = document.getElementById('heatmap-grid');
+  const heatmapTooltip = document.getElementById('heatmap-tooltip');
+
+  // Interactive Crystal Bowl Keys
+  const zenKeyButtons = document.querySelectorAll('.zen-key');
+
   // Completion Modal & Share Elements
   const completionModal = document.getElementById('completion-modal');
   const closeCompletionModal = document.getElementById('close-completion-modal');
+  const linkedinDirectBtn = document.getElementById('linkedin-direct-btn');
+  const nativeShareBtn = document.getElementById('native-share-btn');
   const copyShareBtn = document.getElementById('copy-share-btn');
   const downloadCardBtn = document.getElementById('download-card-btn');
   const shareFeedback = document.getElementById('share-feedback');
@@ -278,42 +295,232 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Streak & Stats Management
+  // Streak, Consistency & Analytics Storage
   const statsStorage = {
     get: () => {
       try {
-        return JSON.parse(localStorage.getItem('tabzen_stats')) || {
-          totalMinutes: 0,
-          totalSessions: 0,
-          lastActiveDate: null,
-          currentStreak: 1
-        };
-      } catch (e) {
-        return { totalMinutes: 0, totalSessions: 0, lastActiveDate: null, currentStreak: 1 };
-      }
+        const parsed = JSON.parse(localStorage.getItem('tabzen_stats'));
+        if (parsed && typeof parsed === 'object') {
+          return {
+            totalMinutes: parsed.totalMinutes || 0,
+            totalSeconds: parsed.totalSeconds || 0,
+            totalSessions: parsed.totalSessions || 0,
+            totalBreaths: parsed.totalBreaths || 0,
+            lastActiveDate: parsed.lastActiveDate || null,
+            currentStreak: parsed.currentStreak || 1,
+            bestStreak: parsed.bestStreak || parsed.currentStreak || 1,
+            dailyLog: parsed.dailyLog || {}
+          };
+        }
+      } catch (e) {}
+      return {
+        totalMinutes: 0,
+        totalSeconds: 0,
+        totalSessions: 0,
+        totalBreaths: 0,
+        lastActiveDate: null,
+        currentStreak: 1,
+        bestStreak: 1,
+        dailyLog: {}
+      };
     },
-    saveSession: (durationSec) => {
+    saveSession: (durationSec, completedCycles = 1) => {
       const stats = statsStorage.get();
       const today = new Date().toISOString().split('T')[0];
       const mins = Math.max(1, Math.round(durationSec / 60));
+      const cycles = Math.max(1, completedCycles || 1);
 
+      stats.totalSeconds += durationSec;
       stats.totalMinutes += mins;
       stats.totalSessions += 1;
+      stats.totalBreaths += cycles;
 
+      // Update daily activity log
+      if (!stats.dailyLog[today]) {
+        stats.dailyLog[today] = { seconds: 0, minutes: 0, sessions: 0, breaths: 0 };
+      }
+      stats.dailyLog[today].seconds += durationSec;
+      stats.dailyLog[today].minutes += mins;
+      stats.dailyLog[today].sessions += 1;
+      stats.dailyLog[today].breaths += cycles;
+
+      // Streak calculation
       if (stats.lastActiveDate) {
         const last = new Date(stats.lastActiveDate);
-        const diffDays = Math.round((new Date(today) - last) / (1000 * 60 * 60 * 24));
-        if (diffDays === 1) stats.currentStreak += 1;
-        else if (diffDays > 1) stats.currentStreak = 1;
+        const cur = new Date(today);
+        const diffDays = Math.round((cur - last) / (1000 * 60 * 60 * 24));
+        if (diffDays === 1) {
+          stats.currentStreak += 1;
+        } else if (diffDays > 1) {
+          stats.currentStreak = 1;
+        }
       } else {
         stats.currentStreak = 1;
       }
 
+      if (stats.currentStreak > (stats.bestStreak || 1)) {
+        stats.bestStreak = stats.currentStreak;
+      }
       stats.lastActiveDate = today;
-      localStorage.setItem('tabzen_stats', JSON.stringify(stats));
+
+      try {
+        localStorage.setItem('tabzen_stats', JSON.stringify(stats));
+      } catch (e) {}
+
       return stats;
+    },
+    clear: () => {
+      localStorage.removeItem('tabzen_stats');
+      if (streakCountDisplay) streakCountDisplay.textContent = '1';
     }
   };
+
+  // Render Mindful Analytics & 7-Day Consistency Heatmap
+  function renderAnalyticsModal() {
+    const stats = statsStorage.get();
+
+    if (analyticsTotalMinutes) analyticsTotalMinutes.textContent = stats.totalMinutes;
+    if (analyticsTotalBreaths) analyticsTotalBreaths.textContent = stats.totalBreaths;
+    
+    // Oxygen calculation: ~0.5L fresh air per conscious breath cycle
+    const estOxygen = (stats.totalBreaths > 0 
+      ? (stats.totalBreaths * 0.5) 
+      : (stats.totalMinutes * 6 * 0.5)
+    ).toFixed(1);
+    if (analyticsOxygen) analyticsOxygen.textContent = `${estOxygen} L`;
+    if (analyticsStreak) analyticsStreak.textContent = `${stats.currentStreak} 🔥`;
+
+    if (!heatmapGrid) return;
+    heatmapGrid.innerHTML = '';
+
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const now = new Date();
+
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(now.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      const dayName = dayNames[d.getDay()];
+      const dayNum = d.getDate();
+
+      const log = stats.dailyLog && stats.dailyLog[dateStr] 
+        ? stats.dailyLog[dateStr] 
+        : { minutes: 0, sessions: 0, breaths: 0 };
+      
+      let level = 0;
+      if (log.minutes >= 5 || log.sessions >= 3) level = 3;
+      else if (log.minutes >= 3 || log.sessions >= 2) level = 2;
+      else if (log.minutes >= 1 || log.sessions >= 1) level = 1;
+
+      const col = document.createElement('div');
+      col.className = 'heatmap-day-col';
+
+      const nameEl = document.createElement('span');
+      nameEl.className = 'heatmap-day-name';
+      nameEl.textContent = dayName;
+
+      const tile = document.createElement('div');
+      tile.className = `heatmap-tile level-${level}`;
+      tile.dataset.date = dateStr;
+      tile.dataset.minutes = log.minutes;
+      tile.dataset.sessions = log.sessions;
+      tile.dataset.breaths = log.breaths;
+
+      // Dynamic hover tooltip
+      tile.addEventListener('mouseenter', () => {
+        if (!heatmapTooltip) return;
+        heatmapTooltip.textContent = `${dayName}, ${dateStr.slice(5)}: ${log.sessions} reset${log.sessions === 1 ? '' : 's'} • ${log.minutes}m • ${log.breaths} breaths`;
+        heatmapTooltip.classList.add('show');
+      });
+      tile.addEventListener('mouseleave', () => {
+        if (heatmapTooltip) heatmapTooltip.classList.remove('show');
+      });
+
+      const dateLbl = document.createElement('span');
+      dateLbl.className = 'heatmap-date-lbl';
+      dateLbl.textContent = dayNum;
+
+      col.appendChild(nameEl);
+      col.appendChild(tile);
+      col.appendChild(dateLbl);
+      heatmapGrid.appendChild(col);
+    }
+  }
+
+  // Analytics Modal Listeners
+  if (openAnalyticsBtn) {
+    openAnalyticsBtn.addEventListener('click', () => {
+      renderAnalyticsModal();
+      analyticsModal.classList.add('show');
+    });
+  }
+
+  if (closeAnalyticsModal) {
+    closeAnalyticsModal.addEventListener('click', () => {
+      analyticsModal.classList.remove('show');
+    });
+  }
+
+  if (resetAnalyticsBtn) {
+    resetAnalyticsBtn.addEventListener('click', () => {
+      if (confirm('Reset your local mindful reset history and heatmap?')) {
+        statsStorage.clear();
+        renderAnalyticsModal();
+      }
+    });
+  }
+
+  // Interactive 432Hz Crystal Bowl Synthesizer (A-L keys)
+  const KEY_NOTE_MAP = {
+    'a': 0, 's': 1, 'd': 2, 'f': 3, 'g': 4, 'h': 5, 'j': 6, 'k': 7, 'l': 8
+  };
+
+  const NOTE_RIPPLE_COLORS = [
+    '#fb7185', '#fb923c', '#facc15', '#2dd4bf', '#38bdf8', '#818cf8', '#c084fc', '#e879f9', '#f43f5e'
+  ];
+
+  function playCrystalBowl(idx, fromKeyEl = null) {
+    if (idx < 0 || idx > 8) return;
+    audioEngine.resume();
+    audioEngine.playTunedNote(idx);
+
+    // Compute ripple position
+    let ripX = null;
+    let ripY = null;
+    if (fromKeyEl && canvas) {
+      const rect = fromKeyEl.getBoundingClientRect();
+      const canvasRect = canvas.getBoundingClientRect();
+      ripX = rect.left + rect.width / 2 - canvasRect.left;
+      ripY = visualizer.height - 40;
+    } else {
+      ripX = visualizer.centerX + (idx - 4) * 40;
+      ripY = visualizer.centerY + (Math.sin(idx * 0.8) * 30);
+    }
+
+    const noteColor = NOTE_RIPPLE_COLORS[idx] || '#2dd4bf';
+    visualizer.triggerRipple(ripX, ripY, noteColor);
+
+    // Visual button active pulse
+    const keyBtn = fromKeyEl || document.querySelector(`.zen-key[data-note-idx="${idx}"]`);
+    if (keyBtn) {
+      keyBtn.classList.add('active');
+      setTimeout(() => keyBtn.classList.remove('active'), 200);
+    }
+
+    // Micro-haptic
+    if ('vibrate' in navigator) {
+      try { navigator.vibrate(15); } catch (e) {}
+    }
+  }
+
+  // Attach touch/click listeners to on-screen Zen keys
+  zenKeyButtons.forEach(btn => {
+    const noteIdx = parseInt(btn.dataset.noteIdx, 10);
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      playCrystalBowl(noteIdx, btn);
+    });
+  });
 
   // Theme Management
   function applyTheme(themeId) {
@@ -427,7 +634,7 @@ document.addEventListener('DOMContentLoaded', () => {
       audioEngine.stopAmbience();
       updatePlayBtn(false);
 
-      const updated = statsStorage.saveSession(stats.durationSeconds);
+      const updated = statsStorage.saveSession(stats.durationSeconds, stats.completedCycles);
       if (streakCountDisplay) streakCountDisplay.textContent = updated.currentStreak;
 
       showCompletionModal(stats);
@@ -632,9 +839,18 @@ document.addEventListener('DOMContentLoaded', () => {
     customModal.classList.remove('show');
   });
 
-  // Keyboard Shortcuts
+  // Keyboard Shortcuts (Space, F, H, M, R, 1-5, and A-L Crystal Chimes)
   window.addEventListener('keydown', (e) => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+    const lowerKey = e.key.toLowerCase();
+
+    // Check for 432Hz Crystal Bowl key triggers (A - L)
+    if (KEY_NOTE_MAP[lowerKey] !== undefined) {
+      e.preventDefault();
+      playCrystalBowl(KEY_NOTE_MAP[lowerKey]);
+      return;
+    }
 
     if (e.code === 'Space') {
       e.preventDefault();
@@ -657,6 +873,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Share Text Generator for LinkedIn & Clipboard
+  function generateShareText() {
+    const activeProto = breathingEngine.activeProtocol.name;
+    const breaths = modalStatsBreaths.textContent;
+    const time = modalStatsTime.textContent;
+    const stats = statsStorage.get();
+
+    const bpmLine = calculatedBPM ? `🫀 Heart Rate: ${calculatedBPM} BPM (Coherence: ${isCardiacCoherenceLocked ? 'Locked 0.1Hz Resonance ✨' : 'Stabilized'})\n` : '';
+
+    return `Just completed a 60-second mindful reset on TabZen 🧘‍♂️\n\n` +
+      `⏱️ Mindful Duration: ${time}\n` +
+      `🫁 Breathing Protocol: ${activeProto}\n` +
+      `✨ Cycles Completed: ${breaths}\n` +
+      bpmLine +
+      `🔥 Current Streak: ${stats.currentStreak} days\n` +
+      `💨 Oxygen Circulated: ${(stats.totalBreaths * 0.5).toFixed(1)} Liters\n\n` +
+      `Nervous system downshifted & clarity restored. Ready for the next deep work sprint!\n\n` +
+      `TabZen: Zero-dependency procedural breathwork visualizer built with Web Audio API & HTML5 Canvas.\n` +
+      `#mindfulness #webdev #frontend #deepwork #healthtech #javascript`;
+  }
+
   // Completion Modal & Social Sharing
   function showCompletionModal(stats) {
     currentActiveStats = stats;
@@ -677,27 +914,64 @@ document.addEventListener('DOMContentLoaded', () => {
     completionModal.classList.remove('show');
   });
 
+  // 1-Click Direct LinkedIn Post Composer
+  if (linkedinDirectBtn) {
+    linkedinDirectBtn.addEventListener('click', () => {
+      const shareText = generateShareText();
+      const linkedInUrl = `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(shareText)}`;
+      
+      // Open LinkedIn Feed Composer
+      window.open(linkedInUrl, '_blank', 'noopener,noreferrer');
+
+      // Auto-download 1200x675 card so user can attach it directly
+      downloadCardBtn.click();
+
+      shareFeedback.textContent = '🚀 Opening LinkedIn! Your 1200x675 card is downloading to attach.';
+      shareFeedback.classList.add('visible');
+      setTimeout(() => shareFeedback.classList.remove('visible'), 5000);
+    });
+  }
+
+  // Native Mobile/Device Share API
+  if (nativeShareBtn && navigator.share) {
+    nativeShareBtn.style.display = 'flex';
+    nativeShareBtn.addEventListener('click', async () => {
+      const shareText = generateShareText();
+      const cvs = offscreenCardCanvas;
+
+      cvs.toBlob(async (blob) => {
+        try {
+          if (blob && navigator.canShare && navigator.canShare({ files: [new File([blob], 'tabzen-reset.png', { type: 'image/png' })] })) {
+            const file = new File([blob], 'tabzen-mindful-reset.png', { type: 'image/png' });
+            await navigator.share({
+              title: 'TabZen — Mindful Reset',
+              text: shareText,
+              files: [file]
+            });
+          } else {
+            await navigator.share({
+              title: 'TabZen — Mindful Reset',
+              text: shareText
+            });
+          }
+          shareFeedback.textContent = 'Shared successfully!';
+          shareFeedback.classList.add('visible');
+          setTimeout(() => shareFeedback.classList.remove('visible'), 3000);
+        } catch (err) {
+          if (err.name !== 'AbortError') {
+            copyShareBtn.click();
+          }
+        }
+      }, 'image/png');
+    });
+  }
+
   // Copy Reflection / LinkedIn snippet
   copyShareBtn.addEventListener('click', () => {
-    const activeProto = breathingEngine.activeProtocol.name;
-    const breaths = modalStatsBreaths.textContent;
-    const time = modalStatsTime.textContent;
-    const stats = statsStorage.get();
-
-    const bpmLine = calculatedBPM ? `🫀 Heart Rate: ${calculatedBPM} BPM (Coherence: ${isCardiacCoherenceLocked ? 'Locked 0.1Hz ✨' : 'Stabilized'})\n` : '';
-
-    const shareText = `Just took a quick mindful reset on TabZen 🧘‍♂️\n\n` +
-      `⏱️ Duration: ${time}\n` +
-      `🫁 Protocol: ${activeProto}\n` +
-      `✨ Breaths Completed: ${breaths}\n` +
-      bpmLine +
-      `🔥 Current Streak: ${stats.currentStreak} days\n` +
-      `🧠 Focus restored. Ready for the next deep work sprint!\n\n` +
-      `Try TabZen: Procedural breathwork visualizer built with Web Audio API & Canvas.\n` +
-      `#webdev #mindfulness #developerwellness #javascript`;
+    const shareText = generateShareText();
 
     navigator.clipboard.writeText(shareText).then(() => {
-      shareFeedback.textContent = 'Copied to clipboard! Ready to paste on LinkedIn.';
+      shareFeedback.textContent = 'Copied reflection to clipboard! Ready to paste on LinkedIn.';
       shareFeedback.classList.add('visible');
       setTimeout(() => shareFeedback.classList.remove('visible'), 4000);
     }).catch(() => {
@@ -770,7 +1044,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     ctx.fillStyle = '#2dd4bf';
     ctx.font = 'bold 18px system-ui, sans-serif';
-    ctx.fillText(`✨ ${currentActiveStats.protocol.toUpperCase()}`, 100, 188);
+    ctx.fillText(`✨ ${currentActiveStats.protocol.toUpperCase()} • 💨 ${((currentActiveStats.completedCycles || 1) * 0.5).toFixed(1)}L O₂`, 100, 188);
 
     // 6. Three Major Stat Cards
     const statsData = [

@@ -22,13 +22,18 @@ Developers and knowledge workers spend 8+ hours a day staring at glowing screens
   - **🔮 Organic Orb** (Classic glowing aura and particle sphere)
   - **🪷 Sacred Mandala** (8-fold kaleidoscopic blooming lotus with golden ratio geometry)
   - **〰️ Liquid Silk** (Fluid undulating sinusoidal ribbons)
+- Features an **Interactive 432Hz Pentatonic Crystal Bowl Instrument** (<kbd>A</kbd> - <kbd>L</kbd> keys & on-screen dock):
+  - Play 9 tuned Solfeggio singing bowls (D4 to A5 harmonic spectrum) that trigger physical, expanding shockwave ripples across the canvas!
+- Tracks **Mindful Consistency Analytics & 7-Day Activity Heatmap**:
+  - Daily tracking of cumulative mindful minutes, completed resets, estimated O₂ circulated, and a color-coded consistency heatmap.
+- Features **1-Click Direct LinkedIn Post Composer & Native Device Web Share API**:
+  - Automatically formats session reflection text, opens LinkedIn's feed composer, and generates a 1200x675 PNG share card.
 - Features **interactive mouse & mobile gyro parallax physics** with magnetic particle repulsion.
 - Includes a **Global Multi-Language Voice Whisperer** via Web Speech API in **7 languages**:
   - 🇬🇧 English, 🇪🇸 Spanish, 🇫🇷 French, 🇯🇵 Japanese, 🇩🇪 German, 🇮🇳 Hindi, and 🇮🇳 **Telugu (తెలుగు)**.
 - Features **1-click Soundscape Presets** (*Temple Zen*, *Midnight Coast*, *Alpha Focus*, *Chimes Only*).
 - Includes an interactive **Custom Rhythm Builder** where you can dial in your own Inhale, Hold, and Exhale intervals.
 - Offers **4 visual themes** (Cosmic OLED, Sakura Dusk, Forest Zen, Solar Dawn).
-- Exports a high-res **1200x675 PNG Share Card** with 1 click to post directly on LinkedIn alongside your demo!
 - Operates as a **Progressive Web App (PWA)** that installs to your desktop or mobile home screen and works **100% offline**.
 
 ---
@@ -59,6 +64,8 @@ Then visit `http://localhost:8080`.
 
 | Component | Technical Implementation |
 |---|---|
+| **432Hz Crystal Bowl Synthesizer** | 9-note Solfeggio pentatonic keyboard instrument (D4 to A5) playable via <kbd>A</kbd>-<kbd>L</kbd> keys or on-screen dock. Triggers expanding screen-blend shockwave ripples. |
+| **Mindful Analytics & Heatmap** | Persistent tracking of mindful minutes, breath count, estimated O₂ circulated, and a color-coded 7-day consistency activity heatmap. |
 | **Heart Rate EKG & Coherence** | Tap-to-sync inter-beat interval estimator. Computes resting BPM and draws a live, hospital-grade EKG cardiogram wave. Locks onto 0.1 Hz Mayer wave resonance during coherence breathing. |
 | **Dual-Mode Pomodoro Flow** | State machine toggles between 25-minute deep focus sprints and 60-second guided breath breaks with acoustic transition chimes. |
 | **Multi-Language Voice Whisperer** | Native browser `window.speechSynthesis` tuned to soothing 0.8x cadence in English, Spanish, French, Japanese, German, Hindi, and Telugu. |
@@ -69,7 +76,7 @@ Then visit `http://localhost:8080`.
 | **Tibetan Singing Bowl** | Procedural harmonic chime using Solfeggio frequencies (432Hz / 528Hz) with multiple detuned sine oscillators and exponential decay envelopes. |
 | **Breath-Synced Tidal Wave** | Algorithmic brown noise passed through a resonant `BiquadFilterNode` modulated in real-time by the breath cycle phase. |
 | **Binaural Alpha Waves** | Dual stereo carrier oscillators (216 Hz Left, 226 Hz Right) creating a natural 10 Hz Alpha beat frequency in headphones to induce relaxed focus. |
-| **Canvas Share Card Generator** | 1-click export renders an off-screen 1200x675 canvas with session metrics, heart rate, streak, and a mindfulness quote into a downloadable PNG. |
+| **1-Click LinkedIn Intent & Card** | Direct 1-click LinkedIn feed composer with auto-generated reflection and off-screen 1200x675 canvas PNG card download. |
 | **PWA & Offline Service Worker** | `manifest.json` and CacheFirst `sw.js` enable desktop/mobile home screen installation with 100% offline reliability. |
 
 ---
@@ -77,6 +84,7 @@ Then visit `http://localhost:8080`.
 ## ⌨️ Keyboard Shortcuts
 
 - <kbd>Space</kbd> — Start / Pause Reset Session
+- <kbd>A</kbd> - <kbd>L</kbd> — Play 432Hz Pentatonic Crystal Bowls
 - <kbd>F</kbd> — Toggle Zen Fullscreen Mode
 - <kbd>H</kbd> — Open Heartbeat Tap-to-Sync Modal
 - <kbd>M</kbd> — Quick Audio Mute / Unmute

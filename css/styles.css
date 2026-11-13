@@ -1073,6 +1073,317 @@ body.zen-mode .visualizer-container {
   color: var(--text-muted);
 }
 
+/* Analytics Badge Header Button */
+.analytics-badge-btn {
+  background: rgba(45, 212, 191, 0.1);
+  border: 1px solid rgba(45, 212, 191, 0.28);
+  color: #2dd4bf;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.analytics-badge-btn:hover {
+  background: rgba(45, 212, 191, 0.2);
+  border-color: rgba(45, 212, 191, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 0 16px rgba(45, 212, 191, 0.25);
+}
+
+/* Interactive Crystal Bowl Keyboard Dock */
+.zen-keyboard-section {
+  width: 100%;
+  max-width: 580px;
+  margin: 0.85rem auto 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: opacity 0.4s ease;
+}
+
+.zen-keyboard-dock {
+  display: flex;
+  gap: 0.45rem;
+  justify-content: center;
+  background: rgba(15, 20, 31, 0.65);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+  padding: 0.45rem 0.65rem;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.zen-key {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  min-width: 48px;
+  height: 52px;
+  padding: 0.3rem 0.4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.zen-key-letter {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.zen-key-note {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-faint);
+}
+
+.zen-key:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--phase-accent);
+  transform: translateY(-2px);
+  box-shadow: 0 0 14px var(--phase-accent-glow);
+}
+
+.zen-key:active, .zen-key.active {
+  background: var(--phase-accent);
+  border-color: var(--phase-accent);
+  transform: translateY(1px) scale(0.95);
+  box-shadow: 0 0 22px var(--phase-accent);
+}
+
+.zen-key:active .zen-key-letter, .zen-key.active .zen-key-letter {
+  color: #07090e;
+}
+
+.zen-key:active .zen-key-note, .zen-key.active .zen-key-note {
+  color: rgba(7, 9, 14, 0.85);
+}
+
+.zen-key-special {
+  border-color: rgba(45, 212, 191, 0.35);
+  background: rgba(45, 212, 191, 0.08);
+}
+
+.zen-key-special .zen-key-note {
+  color: var(--phase-accent);
+  font-weight: 700;
+}
+
+/* Analytics Modal & Heatmap */
+.analytics-modal-card {
+  max-width: 520px;
+}
+
+.analytics-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  margin: 1.25rem 0;
+}
+
+.analytics-metric-box {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.9rem;
+  text-align: center;
+}
+
+.analytics-metric-val {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 0.2rem;
+}
+
+.analytics-metric-lbl {
+  font-size: 0.75rem;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.heatmap-section {
+  background: rgba(15, 20, 31, 0.6);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+  position: relative;
+}
+
+.heatmap-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.heatmap-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.heatmap-legend {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.legend-box {
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+}
+
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+}
+
+.heatmap-day-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.heatmap-day-name {
+  font-size: 0.7rem;
+  color: var(--text-faint);
+  font-weight: 600;
+}
+
+.heatmap-tile {
+  width: 100%;
+  aspect-ratio: 1;
+  max-width: 44px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.heatmap-tile:hover {
+  transform: scale(1.12);
+  border-color: var(--phase-accent);
+  z-index: 2;
+}
+
+.heatmap-tile.level-0 {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.heatmap-tile.level-1 {
+  background: rgba(45, 212, 191, 0.3);
+  border-color: rgba(45, 212, 191, 0.4);
+  box-shadow: 0 0 6px rgba(45, 212, 191, 0.2);
+}
+
+.heatmap-tile.level-2 {
+  background: rgba(45, 212, 191, 0.65);
+  border-color: rgba(45, 212, 191, 0.8);
+  box-shadow: 0 0 10px rgba(45, 212, 191, 0.4);
+}
+
+.heatmap-tile.level-3 {
+  background: #2dd4bf;
+  border-color: #5eead4;
+  box-shadow: 0 0 14px rgba(45, 212, 191, 0.7);
+}
+
+.legend-box.level-0 { background: rgba(255, 255, 255, 0.08); }
+.legend-box.level-1 { background: rgba(45, 212, 191, 0.3); }
+.legend-box.level-2 { background: rgba(45, 212, 191, 0.65); }
+.legend-box.level-3 { background: #2dd4bf; }
+
+.heatmap-date-lbl {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+.heatmap-tooltip {
+  position: absolute;
+  bottom: -32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(7, 9, 14, 0.95);
+  border: 1px solid var(--border-subtle);
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  color: var(--text-main);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 10;
+}
+
+.heatmap-tooltip.show {
+  opacity: 1;
+}
+
+.analytics-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.text-danger-btn {
+  background: transparent;
+  border: none;
+  color: #f43f5e;
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  transition: background 0.2s ease;
+}
+
+.text-danger-btn:hover {
+  background: rgba(244, 63, 94, 0.1);
+}
+
+/* 1-Click Direct LinkedIn Post Composer Button */
+.linkedin-direct-btn {
+  background: linear-gradient(135deg, #0a66c2, #004182);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-full);
+  padding: 0.85rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  width: 100%;
+  box-shadow: 0 4px 18px rgba(10, 102, 194, 0.4);
+  transition: all 0.25s ease;
+}
+
+.linkedin-direct-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(10, 102, 194, 0.6);
+}
+
 /* Mobile Responsiveness */
 @media (max-width: 640px) {
   .app-header {
@@ -1093,6 +1404,24 @@ body.zen-mode .visualizer-container {
   }
   .phase-heading {
     font-size: 1.85rem;
+  }
+  .zen-keyboard-dock {
+    gap: 0.25rem;
+    padding: 0.35rem 0.45rem;
+  }
+  .zen-key {
+    min-width: 34px;
+    height: 44px;
+    padding: 0.2rem;
+  }
+  .zen-key-letter {
+    font-size: 0.82rem;
+  }
+  .zen-key-note {
+    font-size: 0.6rem;
+  }
+  .analytics-badge-label {
+    display: none;
   }
   .keyboard-hints {
     display: none;
