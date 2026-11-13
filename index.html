@@ -37,6 +37,12 @@
     </div>
 
     <div class="header-actions">
+      <!-- 10-Second HD Video Recorder with Web Audio Sync -->
+      <button id="record-video-btn" class="video-record-btn" title="Record 10-Second HD Video Clip (WebM)">
+        <span class="record-pulse-dot">⏺️</span>
+        <span id="record-btn-text" class="record-btn-text">Record Clip</span>
+      </button>
+
       <!-- Mindful Consistency Analytics Modal -->
       <button id="open-analytics-btn" class="analytics-badge-btn" title="Mindful Consistency & 7-Day Activity Heatmap">
         <span>📊</span>
@@ -270,6 +276,10 @@
           <span class="icon">🧠</span>
           <span>Alpha Focus</span>
         </button>
+        <button class="preset-btn" data-preset="rain">
+          <span class="icon">🌧️</span>
+          <span>Rain Sanctuary</span>
+        </button>
         <button class="preset-btn" data-preset="chimes">
           <span class="icon">🔔</span>
           <span>Chimes Only</span>
@@ -355,6 +365,57 @@
       </div>
       <p class="sound-desc">Dual carrier wave for relaxed focus (use headphones)</p>
       <input type="range" id="binaural-vol" min="0" max="1" step="0.05" value="0.45">
+    </div>
+
+    <!-- 7 Sacred Solfeggio Frequencies Tuner -->
+    <div class="sound-control-group">
+      <div class="sound-label-row">
+        <span>Sacred Solfeggio Tuning</span>
+        <span id="solfeggio-val-badge" class="solfeggio-badge">432 Hz</span>
+      </div>
+      <p class="sound-desc">Tune singing bowl chords & harmonic resonance</p>
+      <select id="solfeggio-select" class="lang-select">
+        <option value="396">396 Hz • Root (Liberate Fear & Guilt)</option>
+        <option value="432" selected>432 Hz • Heart (Natural Miracle Harmony)</option>
+        <option value="528">528 Hz • Solar (Transformation & Clarity)</option>
+        <option value="639">639 Hz • Heart Connection (Compassion)</option>
+        <option value="741">741 Hz • Throat (Awakening Intuition)</option>
+        <option value="852">852 Hz • Third Eye (Spiritual Order)</option>
+        <option value="963">963 Hz • Crown (Pure Cosmic Consciousness)</option>
+      </select>
+    </div>
+
+    <!-- Isochronic Pulser (Works without headphones!) -->
+    <div class="sound-control-group">
+      <div class="sound-label-row">
+        <span>Isochronic Pulser (Speaker-Friendly)</span>
+        <select id="isochronic-rate-select" class="rate-mini-select">
+          <option value="10" selected>Alpha 10Hz (Focus)</option>
+          <option value="6">Theta 6Hz (Deep Calm)</option>
+          <option value="2">Delta 2Hz (Rest)</option>
+        </select>
+      </div>
+      <p class="sound-desc">Rhythmic brainwave pulse — audible on laptop/phone speakers</p>
+      <input type="range" id="isochronic-vol" min="0" max="1" step="0.05" value="0.0">
+    </div>
+
+    <!-- Procedural Rain Synthesizer -->
+    <div class="sound-control-group">
+      <div class="sound-label-row">
+        <span>Procedural Rain</span>
+      </div>
+      <p class="sound-desc">Algorithmic high-frequency droplet rainfall</p>
+      <input type="range" id="rain-vol" min="0" max="1" step="0.05" value="0.0">
+    </div>
+
+    <!-- Procedural Distant Thunder Synthesizer -->
+    <div class="sound-control-group">
+      <div class="sound-label-row">
+        <span>Distant Thunder</span>
+        <button id="trigger-thunder-btn" class="mini-trigger-btn" title="Simulate Rolling Thunder Strike">⚡ Rumble</button>
+      </div>
+      <p class="sound-desc">Sub-bass rolling acoustic resonance</p>
+      <input type="range" id="thunder-vol" min="0" max="1" step="0.05" value="0.0">
     </div>
   </aside>
 
@@ -515,6 +576,15 @@
             <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9h2.78v8.37H6.46v-8.37M7.85 6.46c-.96 0-1.74.78-1.74 1.74s.78 1.74 1.74 1.74 1.74-.78 1.74-1.74-.78-1.74-1.74-1.74Z"/>
           </svg>
           1-Click Post to LinkedIn
+        </button>
+
+        <!-- Record & Download 10-Second HD Video Clip (WebM) -->
+        <button id="modal-record-video-btn" class="card-download-btn video-accent-btn" title="Record & Download 10s HD Animated Video with Sound (WebM)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="23 7 16 12 23 17 23 7"></polygon>
+            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+          </svg>
+          Record 10s Video Clip (WebM)
         </button>
 
         <!-- Download Visual Image Card -->

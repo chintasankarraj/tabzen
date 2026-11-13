@@ -12,25 +12,31 @@ const SOUND_PRESETS = {
     id: 'temple',
     name: 'Temple Zen',
     icon: '🧘',
-    volumes: { master: 0.75, bell: 0.9, wave: 0.2, noise: 0.25, binaural: 0.45 }
+    volumes: { master: 0.75, bell: 0.9, wave: 0.2, noise: 0.25, binaural: 0.45, rain: 0.0, thunder: 0.0, isochronic: 0.0 }
   },
   ocean: {
     id: 'ocean',
     name: 'Midnight Coast',
     icon: '🌊',
-    volumes: { master: 0.75, bell: 0.45, wave: 0.95, noise: 0.35, binaural: 0.3 }
+    volumes: { master: 0.75, bell: 0.45, wave: 0.95, noise: 0.35, binaural: 0.3, rain: 0.0, thunder: 0.0, isochronic: 0.0 }
   },
   alpha: {
     id: 'alpha',
     name: 'Deep Alpha Focus',
     icon: '🧠',
-    volumes: { master: 0.75, bell: 0.35, wave: 0.2, noise: 0.6, binaural: 0.85 }
+    volumes: { master: 0.75, bell: 0.35, wave: 0.2, noise: 0.6, binaural: 0.85, rain: 0.0, thunder: 0.0, isochronic: 0.5 }
+  },
+  rain: {
+    id: 'rain',
+    name: 'Rainy Sanctuary',
+    icon: '🌧️',
+    volumes: { master: 0.75, bell: 0.65, wave: 0.15, noise: 0.2, binaural: 0.25, rain: 0.85, thunder: 0.5, isochronic: 0.0 }
   },
   chimes: {
     id: 'chimes',
     name: 'Chimes Only',
     icon: '🔔',
-    volumes: { master: 0.75, bell: 0.9, wave: 0.0, noise: 0.0, binaural: 0.0 }
+    volumes: { master: 0.75, bell: 0.9, wave: 0.0, noise: 0.0, binaural: 0.0, rain: 0.0, thunder: 0.0, isochronic: 0.0 }
   }
 };
 
@@ -54,15 +60,29 @@ class ZenAudioEngine {
     this.waveGain = null;
     this.noiseGain = null;
     this.binauralGain = null;
+    this.rainGain = null;
+    this.thunderGain = null;
+    this.isochronicGain = null;
+
+    // MediaStreamDestination for video recording
+    this.mediaStreamDest = null;
 
     // Noise nodes
     this.noiseSource = null;
     this.waveSource = null;
     this.waveFilter = null;
+    this.rainSource = null;
 
-    // Binaural nodes
+    // Binaural & Isochronic nodes
     this.leftOsc = null;
     this.rightOsc = null;
+    this.isochronicCarrier = null;
+    this.isochronicLFO = null;
+    this.isochronicPulseGain = null;
+    this.isochronicRate = 10; // 10Hz Alpha by default
+
+    // Solfeggio Sacred Tuning (Hz)
+    this.solfeggioFreq = 432;
 
     // Volumes (0 - 1)
     this.volumes = {
@@ -70,7 +90,10 @@ class ZenAudioEngine {
       bell: 0.9,
       wave: 0.2,
       noise: 0.25,
-      binaural: 0.45
+      binaural: 0.45,
+      rain: 0.0,
+      thunder: 0.0,
+      isochronic: 0.0
     };
 
     // Frequencies for bell chords (Hz)
@@ -111,6 +134,12 @@ class ZenAudioEngine {
     this.freqData = new Uint8Array(this.analyser.frequencyBinCount);
     this.timeData = new Uint8Array(this.analyser.frequencyBinCount);
 
+    // MediaStreamDestination for Video Recording with Web Audio Sync
+    if (this.ctx.createMediaStreamDestination) {
+      this.mediaStreamDest = this.ctx.createMediaStreamDestination();
+      this.masterGain.connect(this.mediaStreamDest);
+    }
+
     // 8D Stereo Spatial Panner
     if (this.ctx.createStereoPanner) {
       this.spatialPanner = this.ctx.createStereoPanner();
@@ -140,8 +169,60 @@ class ZenAudioEngine {
     this.binauralGain.gain.setValueAtTime(0, this.ctx.currentTime);
     this.binauralGain.connect(this.masterGain);
 
+    // Rain Bus
+    this.rainGain = this.ctx.createGain();
+    this.rainGain.gain.setValueAtTime(0, this.ctx.currentTime);
+    this.rainGain.connect(this.masterGain);
+
+    // Thunder Bus
+    this.thunderGain = this.ctx.createGain();
+    this.thunderGain.gain.setValueAtTime(this.volumes.thunder, this.ctx.currentTime);
+    this.thunderGain.connect(this.masterGain);
+
+    // Isochronic Pulser Bus
+    this.isochronicGain = this.ctx.createGain();
+    this.isochronicGain.gain.setValueAtTime(0, this.ctx.currentTime);
+    this.isochronicGain.connect(this.masterGain);
+
     this._setupNoiseGenerators();
     this._setupBinauralGenerators();
+    this._setupRainGenerator();
+    this._setupIsochronicGenerator();
+  }
+
+  getAudioStreamTrack() {
+    if (!this.mediaStreamDest) return null;
+    return this.mediaStreamDest.stream.getAudioTracks()[0] || null;
+  }
+
+  /**
+   * Sets the base sacred Solfeggio frequency and shifts harmonic chord tables
+   * @param {number} freq - 396, 432, 528, 639, 741, 852, 963
+   */
+  setSolfeggioFrequency(freq) {
+    const f = parseInt(freq, 10) || 432;
+    this.solfeggioFreq = f;
+
+    // Recalculate harmonic bell chords around selected Solfeggio fundamental
+    this.bellFrequencies = {
+      inhale: [f, f * 2, f * 3, f * 5],
+      hold: [Math.round(f * 1.25), Math.round(f * 2.5), Math.round(f * 3.75)],
+      exhale: [Math.round(f * 0.75), Math.round(f * 1.5), Math.round(f * 2.25)],
+      rest: [Math.round(f * 0.5), f, Math.round(f * 1.5)]
+    };
+
+    // Update isochronic carrier pitch
+    if (this.isochronicCarrier && this.ctx) {
+      this.isochronicCarrier.frequency.setTargetAtTime(f / 2, this.ctx.currentTime, 0.1);
+    }
+  }
+
+  setIsochronicRate(rate) {
+    const r = parseFloat(rate) || 10;
+    this.isochronicRate = r;
+    if (this.isochronicLFO && this.ctx) {
+      this.isochronicLFO.frequency.setTargetAtTime(r, this.ctx.currentTime, 0.05);
+    }
   }
 
   async resume() {
@@ -263,6 +344,134 @@ class ZenAudioEngine {
 
     this.leftOsc.start();
     this.rightOsc.start();
+  }
+
+  _setupRainGenerator() {
+    // 100% Procedural Rain Synthesizer (White noise pass + gentle acoustic bandpass)
+    const bufferSize = this.ctx.sampleRate * 4;
+    const rainBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = rainBuffer.getChannelData(0);
+
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * 0.4;
+    }
+
+    this.rainSource = this.ctx.createBufferSource();
+    this.rainSource.buffer = rainBuffer;
+    this.rainSource.loop = true;
+
+    // Highpass + Bandpass to simulate soothing rainfall hiss
+    const rainFilter1 = this.ctx.createBiquadFilter();
+    rainFilter1.type = 'highpass';
+    rainFilter1.frequency.setValueAtTime(1400, this.ctx.currentTime);
+
+    const rainFilter2 = this.ctx.createBiquadFilter();
+    rainFilter2.type = 'bandpass';
+    rainFilter2.frequency.setValueAtTime(3200, this.ctx.currentTime);
+    rainFilter2.Q.setValueAtTime(0.85, this.ctx.currentTime);
+
+    this.rainSource.connect(rainFilter1);
+    rainFilter1.connect(rainFilter2);
+    rainFilter2.connect(this.rainGain);
+    this.rainSource.start();
+
+    // Random acoustic droplet generator loop
+    setInterval(() => {
+      if (!this.isPlaying || this.isMuted || this.volumes.rain <= 0.05 || !this.ctx) return;
+      if (Math.random() > 0.45) this._playWaterDroplet();
+    }, 280);
+  }
+
+  _playWaterDroplet() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const dropOsc = this.ctx.createOscillator();
+    const dropGain = this.ctx.createGain();
+
+    const baseFreq = 2200 + Math.random() * 1800;
+    dropOsc.type = 'sine';
+    dropOsc.frequency.setValueAtTime(baseFreq, now);
+    dropOsc.frequency.exponentialRampToValueAtTime(baseFreq * 1.5, now + 0.04);
+
+    const dropVol = (0.015 + Math.random() * 0.035) * this.volumes.rain;
+    dropGain.gain.setValueAtTime(0.0001, now);
+    dropGain.gain.linearRampToValueAtTime(dropVol, now + 0.01);
+    dropGain.gain.exponentialRampToValueAtTime(0.00001, now + 0.05);
+
+    dropOsc.connect(dropGain);
+    dropGain.connect(this.rainGain);
+    dropOsc.start(now);
+    dropOsc.stop(now + 0.06);
+  }
+
+  _setupIsochronicGenerator() {
+    // Isochronic Pulser (Carrier + Square amplitude LFO for speaker-friendly brainwave entrainment)
+    this.isochronicCarrier = this.ctx.createOscillator();
+    this.isochronicCarrier.type = 'sine';
+    this.isochronicCarrier.frequency.setValueAtTime(this.solfeggioFreq / 2, this.ctx.currentTime);
+
+    this.isochronicPulseGain = this.ctx.createGain();
+    this.isochronicPulseGain.gain.setValueAtTime(0.5, this.ctx.currentTime);
+
+    this.isochronicLFO = this.ctx.createOscillator();
+    this.isochronicLFO.type = 'square';
+    this.isochronicLFO.frequency.setValueAtTime(this.isochronicRate, this.ctx.currentTime);
+
+    const lfoDepth = this.ctx.createGain();
+    lfoDepth.gain.setValueAtTime(0.5, this.ctx.currentTime);
+
+    this.isochronicLFO.connect(lfoDepth);
+    lfoDepth.connect(this.isochronicPulseGain.gain);
+
+    this.isochronicCarrier.connect(this.isochronicPulseGain);
+    this.isochronicPulseGain.connect(this.isochronicGain);
+
+    this.isochronicCarrier.start();
+    this.isochronicLFO.start();
+  }
+
+  /**
+   * Procedural Distant Rolling Thunder Synthesizer
+   */
+  triggerThunder() {
+    if (this.isMuted || !this.ctx || this.volumes.thunder <= 0) return;
+    const now = this.ctx.currentTime;
+    const duration = 5.5;
+
+    const thunderBuffer = this.ctx.createBuffer(1, this.ctx.sampleRate * duration, this.ctx.sampleRate);
+    const data = thunderBuffer.getChannelData(0);
+    let b0 = 0, b1 = 0, b2 = 0;
+
+    for (let i = 0; i < data.length; i++) {
+      const white = Math.random() * 2 - 1;
+      b0 = 0.99886 * b0 + white * 0.0555179;
+      b1 = 0.99332 * b1 + white * 0.0750759;
+      b2 = 0.96900 * b2 + white * 0.1538520;
+      data[i] = (b0 + b1 + b2 + white * 0.5362) * 0.45;
+    }
+
+    const thunderSrc = this.ctx.createBufferSource();
+    thunderSrc.buffer = thunderBuffer;
+
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(75, now);
+    filter.frequency.linearRampToValueAtTime(140, now + 1.2);
+    filter.frequency.exponentialRampToValueAtTime(45, now + duration);
+
+    const gain = this.ctx.createGain();
+    const peakVol = 0.85 * this.volumes.thunder;
+    gain.gain.setValueAtTime(0.001, now);
+    gain.gain.linearRampToValueAtTime(peakVol * 0.5, now + 0.6);
+    gain.gain.linearRampToValueAtTime(peakVol, now + 1.2);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+    thunderSrc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.thunderGain);
+
+    thunderSrc.start(now);
+    thunderSrc.stop(now + duration + 0.1);
   }
 
   playBell(phase = 'inhale') {
@@ -394,6 +603,16 @@ class ZenAudioEngine {
 
     this.binauralGain.gain.cancelScheduledValues(now);
     this.binauralGain.gain.setTargetAtTime(this.volumes.binaural * 0.45, now, 0.5);
+
+    if (this.rainGain) {
+      this.rainGain.gain.cancelScheduledValues(now);
+      this.rainGain.gain.setTargetAtTime(this.volumes.rain, now, 0.5);
+    }
+
+    if (this.isochronicGain) {
+      this.isochronicGain.gain.cancelScheduledValues(now);
+      this.isochronicGain.gain.setTargetAtTime(this.volumes.isochronic * 0.35, now, 0.5);
+    }
   }
 
   stopAmbience() {
@@ -409,6 +628,16 @@ class ZenAudioEngine {
 
     this.binauralGain.gain.cancelScheduledValues(now);
     this.binauralGain.gain.setTargetAtTime(0, now, 0.4);
+
+    if (this.rainGain) {
+      this.rainGain.gain.cancelScheduledValues(now);
+      this.rainGain.gain.setTargetAtTime(0, now, 0.4);
+    }
+
+    if (this.isochronicGain) {
+      this.isochronicGain.gain.cancelScheduledValues(now);
+      this.isochronicGain.gain.setTargetAtTime(0, now, 0.4);
+    }
   }
 
   toggleMute() {
@@ -435,6 +664,12 @@ class ZenAudioEngine {
         this.noiseGain.gain.setTargetAtTime(this.volumes.noise, now, 0.05);
       } else if (type === 'binaural' && this.isPlaying) {
         this.binauralGain.gain.setTargetAtTime(this.volumes.binaural * 0.45, now, 0.05);
+      } else if (type === 'rain' && this.isPlaying) {
+        this.rainGain.gain.setTargetAtTime(this.volumes.rain, now, 0.05);
+      } else if (type === 'thunder') {
+        this.thunderGain.gain.setTargetAtTime(this.volumes.thunder, now, 0.05);
+      } else if (type === 'isochronic' && this.isPlaying) {
+        this.isochronicGain.gain.setTargetAtTime(this.volumes.isochronic * 0.35, now, 0.05);
       }
     }
   }

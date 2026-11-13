@@ -1360,6 +1360,99 @@ body.zen-mode .visualizer-container {
   background: rgba(244, 63, 94, 0.1);
 }
 
+/* Video Clip Recorder Button */
+.video-record-btn {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.video-record-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.6);
+  transform: translateY(-1px);
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.3);
+}
+
+.video-record-btn.recording {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: #ef4444;
+  color: #ffffff;
+  animation: pulse-red 1s infinite alternate;
+}
+
+@keyframes pulse-red {
+  from { box-shadow: 0 0 8px rgba(239, 68, 68, 0.4); }
+  to { box-shadow: 0 0 24px rgba(239, 68, 68, 0.85); }
+}
+
+.record-pulse-dot {
+  font-size: 0.85rem;
+  display: inline-block;
+}
+
+.video-accent-btn {
+  background: rgba(168, 85, 247, 0.15) !important;
+  border: 1px solid rgba(168, 85, 247, 0.4) !important;
+  color: #c084fc !important;
+}
+
+.video-accent-btn:hover {
+  background: rgba(168, 85, 247, 0.25) !important;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.4) !important;
+}
+
+/* Solfeggio & Sound Synthesizer Widgets */
+.solfeggio-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--phase-accent);
+  background: rgba(45, 212, 191, 0.12);
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+
+.rate-mini-select {
+  background: rgba(15, 20, 31, 0.8);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  cursor: pointer;
+  outline: none;
+}
+
+.mini-trigger-btn {
+  background: rgba(234, 179, 8, 0.15);
+  border: 1px solid rgba(234, 179, 8, 0.4);
+  color: #facc15;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mini-trigger-btn:hover {
+  background: rgba(234, 179, 8, 0.3);
+  box-shadow: 0 0 10px rgba(234, 179, 8, 0.4);
+}
+
+.mini-trigger-btn:active {
+  transform: scale(0.95);
+}
+
 /* 1-Click Direct LinkedIn Post Composer Button */
 .linkedin-direct-btn {
   background: linear-gradient(135deg, #0a66c2, #004182);

@@ -59,12 +59,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const applyHeartbeatBtn = document.getElementById('apply-heartbeat-btn');
   const closeHeartbeatModal = document.getElementById('close-heartbeat-modal');
 
-  // Audio Sliders
+  // Audio Sliders & Synthesizers
   const masterVol = document.getElementById('master-vol');
   const bellVol = document.getElementById('bell-vol');
   const waveVol = document.getElementById('wave-vol');
   const noiseVol = document.getElementById('noise-vol');
   const binauralVol = document.getElementById('binaural-vol');
+  const rainVol = document.getElementById('rain-vol');
+  const thunderVol = document.getElementById('thunder-vol');
+  const isochronicVol = document.getElementById('isochronic-vol');
+  const isochronicRateSelect = document.getElementById('isochronic-rate-select');
+  const solfeggioSelect = document.getElementById('solfeggio-select');
+  const solfeggioValBadge = document.getElementById('solfeggio-val-badge');
+  const triggerThunderBtn = document.getElementById('trigger-thunder-btn');
+
+  // Video Recording Elements
+  const recordVideoBtn = document.getElementById('record-video-btn');
+  const recordBtnText = document.getElementById('record-btn-text');
+  const modalRecordVideoBtn = document.getElementById('modal-record-video-btn');
 
   // Custom Rhythm Elements
   const openCustomCfgBtn = document.getElementById('open-custom-cfg');
@@ -291,6 +303,9 @@ document.addEventListener('DOMContentLoaded', () => {
         waveVol.value = preset.volumes.wave;
         noiseVol.value = preset.volumes.noise;
         binauralVol.value = preset.volumes.binaural;
+        if (rainVol && preset.volumes.rain !== undefined) rainVol.value = preset.volumes.rain;
+        if (thunderVol && preset.volumes.thunder !== undefined) thunderVol.value = preset.volumes.thunder;
+        if (isochronicVol && preset.volumes.isochronic !== undefined) isochronicVol.value = preset.volumes.isochronic;
       }
     });
   });
@@ -757,12 +772,162 @@ document.addEventListener('DOMContentLoaded', () => {
     soundDrawer.classList.remove('open');
   });
 
-  // Volume Sliders
+  // Volume Sliders & Procedural Synthesizers
   masterVol.addEventListener('input', (e) => audioEngine.setVolume('master', parseFloat(e.target.value)));
   bellVol.addEventListener('input', (e) => audioEngine.setVolume('bell', parseFloat(e.target.value)));
   waveVol.addEventListener('input', (e) => audioEngine.setVolume('wave', parseFloat(e.target.value)));
   noiseVol.addEventListener('input', (e) => audioEngine.setVolume('noise', parseFloat(e.target.value)));
   binauralVol.addEventListener('input', (e) => audioEngine.setVolume('binaural', parseFloat(e.target.value)));
+
+  if (rainVol) {
+    rainVol.addEventListener('input', (e) => audioEngine.setVolume('rain', parseFloat(e.target.value)));
+  }
+  if (thunderVol) {
+    thunderVol.addEventListener('input', (e) => audioEngine.setVolume('thunder', parseFloat(e.target.value)));
+  }
+  if (isochronicVol) {
+    isochronicVol.addEventListener('input', (e) => audioEngine.setVolume('isochronic', parseFloat(e.target.value)));
+  }
+  if (isochronicRateSelect) {
+    isochronicRateSelect.addEventListener('change', (e) => audioEngine.setIsochronicRate(e.target.value));
+  }
+  if (solfeggioSelect) {
+    solfeggioSelect.addEventListener('change', (e) => {
+      audioEngine.setSolfeggioFrequency(e.target.value);
+      if (solfeggioValBadge) solfeggioValBadge.textContent = `${e.target.value} Hz`;
+    });
+  }
+  if (triggerThunderBtn) {
+    triggerThunderBtn.addEventListener('click', () => {
+      audioEngine.resume();
+      audioEngine.triggerThunder();
+      visualizer.triggerRipple(visualizer.centerX, visualizer.centerY - 50, '#facc15');
+    });
+  }
+
+  // 10-Second HD Video Clip Recorder with Web Audio Track Sync
+  let isRecordingVideo = false;
+  let videoMediaRecorder = null;
+  let recordedVideoChunks = [];
+  let recordCountdownTimer = null;
+
+  async function recordZenVideoClip(durationSec = 10) {
+    if (isRecordingVideo) return;
+    if (!canvas || !('captureStream' in canvas) || typeof MediaRecorder === 'undefined') {
+      alert('Video recording is not supported in this browser version. Use a modern desktop browser (Chrome/Edge/Firefox).');
+      return;
+    }
+
+    try {
+      await audioEngine.resume();
+      isRecordingVideo = true;
+      recordedVideoChunks = [];
+
+      // 1. Capture 60FPS high-DPI canvas stream
+      const canvasStream = canvas.captureStream(60);
+
+      // 2. Mix Web Audio destination stream if available
+      const audioTrack = audioEngine.getAudioStreamTrack();
+      const combinedTracks = [...canvasStream.getVideoTracks()];
+      if (audioTrack) {
+        combinedTracks.push(audioTrack);
+      }
+      const combinedStream = new MediaStream(combinedTracks);
+
+      // 3. Determine best supported WebM codec
+      const mimeTypes = [
+        'video/webm;codecs=vp9,opus',
+        'video/webm;codecs=vp8,opus',
+        'video/webm'
+      ];
+      const selectedMime = mimeTypes.find(m => MediaRecorder.isTypeSupported(m)) || 'video/webm';
+
+      videoMediaRecorder = new MediaRecorder(combinedStream, {
+        mimeType: selectedMime,
+        videoBitsPerSecond: 6000000 // High-quality 6 Mbps
+      });
+
+      videoMediaRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          recordedVideoChunks.push(e.data);
+        }
+      };
+
+      videoMediaRecorder.onstop = () => {
+        clearInterval(recordCountdownTimer);
+        isRecordingVideo = false;
+        if (recordVideoBtn) {
+          recordVideoBtn.classList.remove('recording');
+          recordBtnText.textContent = 'Record Clip';
+        }
+        if (modalRecordVideoBtn) {
+          modalRecordVideoBtn.textContent = 'Record 10s Video Clip (WebM)';
+          modalRecordVideoBtn.classList.remove('recording');
+        }
+
+        const blob = new Blob(recordedVideoChunks, { type: selectedMime });
+        const videoUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.download = `tabzen-reset-clip-${Date.now()}.webm`;
+        a.href = videoUrl;
+        a.click();
+        URL.revokeObjectURL(videoUrl);
+
+        if (shareFeedback) {
+          shareFeedback.textContent = '🎥 10-Second HD Video clip downloaded! Upload directly to LinkedIn/X.';
+          shareFeedback.classList.add('visible');
+          setTimeout(() => shareFeedback.classList.remove('visible'), 5000);
+        }
+      };
+
+      // 4. Update UI Countdown
+      let remainingSec = durationSec;
+      if (recordVideoBtn) {
+        recordVideoBtn.classList.add('recording');
+        recordBtnText.textContent = `${remainingSec}s...`;
+      }
+      if (modalRecordVideoBtn) {
+        modalRecordVideoBtn.classList.add('recording');
+        modalRecordVideoBtn.textContent = `Recording (${remainingSec}s)...`;
+      }
+
+      recordCountdownTimer = setInterval(() => {
+        remainingSec--;
+        if (remainingSec > 0) {
+          if (recordVideoBtn) recordBtnText.textContent = `${remainingSec}s...`;
+          if (modalRecordVideoBtn) modalRecordVideoBtn.textContent = `Recording (${remainingSec}s)...`;
+        } else {
+          clearInterval(recordCountdownTimer);
+        }
+      }, 1000);
+
+      videoMediaRecorder.start();
+
+      // Automatically stop after durationSec
+      setTimeout(() => {
+        if (videoMediaRecorder && videoMediaRecorder.state === 'recording') {
+          videoMediaRecorder.stop();
+        }
+      }, durationSec * 1000);
+
+    } catch (err) {
+      console.error('Error starting video recording:', err);
+      isRecordingVideo = false;
+      clearInterval(recordCountdownTimer);
+      if (recordVideoBtn) {
+        recordVideoBtn.classList.remove('recording');
+        recordBtnText.textContent = 'Record Clip';
+      }
+    }
+  }
+
+  if (recordVideoBtn) {
+    recordVideoBtn.addEventListener('click', () => recordZenVideoClip(10));
+  }
+
+  if (modalRecordVideoBtn) {
+    modalRecordVideoBtn.addEventListener('click', () => recordZenVideoClip(10));
+  }
 
   // Protocol Selection
   protocolPills.forEach(pill => {

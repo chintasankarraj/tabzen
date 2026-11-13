@@ -24,6 +24,13 @@ Developers and knowledge workers spend 8+ hours a day staring at glowing screens
   - **〰️ Liquid Silk** (Fluid undulating sinusoidal ribbons)
 - Features an **Interactive 432Hz Pentatonic Crystal Bowl Instrument** (<kbd>A</kbd> - <kbd>L</kbd> keys & on-screen dock):
   - Play 9 tuned Solfeggio singing bowls (D4 to A5 harmonic spectrum) that trigger physical, expanding shockwave ripples across the canvas!
+- **Native 10-Second HD Video Clip Recorder** (`canvas.captureStream` + `MediaRecorder`):
+  - 1-click video recording that captures 60 FPS Canvas visuals synchronized with the Web Audio stream into a downloadable high-res `.webm` video for instant LinkedIn posting!
+- **7 Sacred Solfeggio Frequencies & Speaker-Friendly Isochronic Pulser**:
+  - Tune harmonic singing bowls across 396Hz, 432Hz, 528Hz, 639Hz, 741Hz, 852Hz, and 963Hz.
+  - Isochronic rhythmic amplitude pulser (Alpha 10Hz, Theta 6Hz, Delta 2Hz) that works on regular laptop and phone speakers without headphones.
+- **Procedural Rain & Distant Rolling Thunder Synthesizer**:
+  - 100% mathematical sound generation simulating high-frequency droplet rainfall and deep acoustic sub-bass thunder rumblers with zero MP3 files.
 - Tracks **Mindful Consistency Analytics & 7-Day Activity Heatmap**:
   - Daily tracking of cumulative mindful minutes, completed resets, estimated O₂ circulated, and a color-coded consistency heatmap.
 - Features **1-Click Direct LinkedIn Post Composer & Native Device Web Share API**:
@@ -31,7 +38,7 @@ Developers and knowledge workers spend 8+ hours a day staring at glowing screens
 - Features **interactive mouse & mobile gyro parallax physics** with magnetic particle repulsion.
 - Includes a **Global Multi-Language Voice Whisperer** via Web Speech API in **7 languages**:
   - 🇬🇧 English, 🇪🇸 Spanish, 🇫🇷 French, 🇯🇵 Japanese, 🇩🇪 German, 🇮🇳 Hindi, and 🇮🇳 **Telugu (తెలుగు)**.
-- Features **1-click Soundscape Presets** (*Temple Zen*, *Midnight Coast*, *Alpha Focus*, *Chimes Only*).
+- Features **1-click Soundscape Presets** (*Temple Zen*, *Midnight Coast*, *Alpha Focus*, *Rain Sanctuary*, *Chimes Only*).
 - Includes an interactive **Custom Rhythm Builder** where you can dial in your own Inhale, Hold, and Exhale intervals.
 - Offers **4 visual themes** (Cosmic OLED, Sakura Dusk, Forest Zen, Solar Dawn).
 - Operates as a **Progressive Web App (PWA)** that installs to your desktop or mobile home screen and works **100% offline**.
@@ -64,6 +71,9 @@ Then visit `http://localhost:8080`.
 
 | Component | Technical Implementation |
 |---|---|
+| **10s HD Video Clip Recorder** | Hardware-accelerated `canvas.captureStream(60)` blended with Web Audio `createMediaStreamDestination()` tracks via `MediaRecorder` into ready-to-share 60 FPS WebM video clips. |
+| **Solfeggio & Isochronic Pulser** | 7 Sacred Solfeggio frequencies (396Hz to 963Hz) + speaker-friendly amplitude-modulated square wave pulses (Alpha 10Hz, Theta 6Hz, Delta 2Hz). |
+| **Procedural Rain & Thunder** | Algorithmic stochastic white noise pass-through with micro-droplet click synthesis and resonant low-pass brown noise rolling thunder bursts. |
 | **432Hz Crystal Bowl Synthesizer** | 9-note Solfeggio pentatonic keyboard instrument (D4 to A5) playable via <kbd>A</kbd>-<kbd>L</kbd> keys or on-screen dock. Triggers expanding screen-blend shockwave ripples. |
 | **Mindful Analytics & Heatmap** | Persistent tracking of mindful minutes, breath count, estimated O₂ circulated, and a color-coded 7-day consistency activity heatmap. |
 | **Heart Rate EKG & Coherence** | Tap-to-sync inter-beat interval estimator. Computes resting BPM and draws a live, hospital-grade EKG cardiogram wave. Locks onto 0.1 Hz Mayer wave resonance during coherence breathing. |
