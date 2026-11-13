@@ -1,0 +1,26 @@
+{
+  "name": "tabzen",
+  "version": "1.0.0",
+  "description": "Ultra-aesthetic 60-Second Reset, Pomodoro Flow & Procedural Breathwork Synthesizer built with pure Web Audio API and HTML5 Canvas.",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve . -l 3000",
+    "dev": "npx serve . -l 3000",
+    "check": "node --check js/app.js js/visualizer.js js/audio-engine.js js/breathing-engine.js sw.js",
+    "test": "npm run check"
+  },
+  "keywords": [
+    "mindfulness",
+    "breathwork",
+    "web-audio-api",
+    "canvas",
+    "pomodoro",
+    "solfeggio",
+    "biofeedback",
+    "pwa",
+    "vanilla-js",
+    "creative-coding"
+  ],
+  "author": "TabZen Community",
+  "license": "MIT"
+}
