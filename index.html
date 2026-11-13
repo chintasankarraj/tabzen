@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TabZen — 60-Second Reset & Procedural Breathing Synthesizer</title>
+  <meta name="description" content="A minimalist breathwork visualizer and ambient sound synthesizer built with pure Web Audio API and HTML5 Canvas.">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#07090e">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%232dd4bf'/><circle cx='50' cy='50' r='24' fill='%2307090e'/></svg>">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body data-theme="cosmic" data-phase="inhale">
+
+  <!-- Application Header -->
+  <header class="app-header">
+    <div class="brand-section">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
+            <path d="M2 12h20"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-title">TabZen</div>
+          <div class="brand-tagline">Micro-Reset Synthesizer</div>
+        </div>
+      </div>
+
+      <!-- App Mode Switcher: Micro-Reset vs Pomodoro Flow -->
+      <nav class="app-mode-switch" aria-label="Application Mode">
+        <button id="mode-reset-btn" class="mode-tab-btn active">🧘 Micro-Reset</button>
+        <button id="mode-pomodoro-btn" class="mode-tab-btn">⏱️ Pomodoro Flow</button>
+      </nav>
+    </div>
+
+    <div class="header-actions">
+      <!-- Heart Rate EKG Coherence Button -->
+      <button id="open-heartbeat-btn" class="ekg-badge-btn" title="Tap-to-Sync Heart Rate & HRV Coherence">
+        <span>🫀</span>
+        <span id="ekg-badge-text">Sync Heart</span>
+      </button>
+
+      <!-- Theme Palette Selector -->
+      <div class="theme-picker" title="Switch Visual Theme">
+        <button class="theme-opt-btn active" data-theme="cosmic" title="Cosmic OLED">🌌</button>
+        <button class="theme-opt-btn" data-theme="sakura" title="Sakura Dusk">🌸</button>
+        <button class="theme-opt-btn" data-theme="forest" title="Forest Zen">🍃</button>
+        <button class="theme-opt-btn" data-theme="solar" title="Solar Dawn">🌅</button>
+      </div>
+
+      <!-- Mindful Streak Indicator -->
+      <div class="streak-badge" title="Daily Mindful Reset Streak">
+        <span>🔥</span>
+        <span id="streak-count">1</span> <span style="opacity: 0.8; font-weight: normal;">day</span>
+      </div>
+
+      <!-- Sound Settings Toggle -->
+      <button id="sound-settings-btn" class="icon-btn" title="Audio Synthesizer Settings">
+        <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="4" y1="21" x2="4" y2="14"></line>
+          <line x1="4" y1="10" x2="4" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12" y2="3"></line>
+          <line x1="20" y1="21" x2="20" y2="16"></line>
+          <line x1="20" y1="12" x2="20" y2="3"></line>
+          <line x1="1" y1="14" x2="7" y2="14"></line>
+          <line x1="9" y1="8" x2="15" y2="8"></line>
+          <line x1="17" y1="16" x2="23" y2="16"></line>
+        </svg>
+      </button>
+
+      <!-- Quick Mute Toggle -->
+      <button id="mute-btn" class="icon-btn" title="Toggle Sound (M)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+        </svg>
+      </button>
+
+      <!-- Distraction-Free Fullscreen -->
+      <button id="fullscreen-btn" class="icon-btn" title="Zen Fullscreen Mode (F)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 3 21 3 21 9"></polyline>
+          <polyline points="9 21 3 21 3 15"></polyline>
+          <line x1="21" y1="3" x2="14" y2="10"></line>
+          <line x1="3" y1="21" x2="10" y2="14"></line>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Stage -->
+  <main class="main-stage">
+    
+    <!-- Protocol Mode Selection -->
+    <nav id="protocol-selector-bar" class="protocol-selector" aria-label="Breathing Protocols">
+      <button class="protocol-pill active" data-protocol="box" title="Equal intervals for military-grade focus">
+        <span>🟦</span> Box (4-4-4-4)
+      </button>
+      <button class="protocol-pill" data-protocol="relax" title="Dr. Weil technique for deep parasympathetic relaxation">
+        <span>🪻</span> 4-7-8 Relax
+      </button>
+      <button class="protocol-pill" data-protocol="resonant" title="Optimal Heart Rate Variability (HRV)">
+        <span>🌊</span> Resonant (5.5s)
+      </button>
+      <button class="protocol-pill" data-protocol="awaken" title="Bust afternoon sluggishness">
+        <span>⚡</span> Awaken
+      </button>
+      <button class="protocol-pill" data-protocol="custom" title="Custom rhythm intervals">
+        <span>⚙️</span> Custom
+      </button>
+      <button id="open-custom-cfg" class="custom-cfg-btn" title="Configure Custom Rhythm">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
+    </nav>
+
+    <!-- Visualizer Mode Switcher -->
+    <div class="viz-mode-bar" aria-label="Visualizer Modes">
+      <button class="viz-mode-btn active" data-mode="orb">
+        <span>🔮</span> Organic Orb
+      </button>
+      <button class="viz-mode-btn" data-mode="mandala">
+        <span>🪷</span> Sacred Mandala
+      </button>
+      <button class="viz-mode-btn" data-mode="silk">
+        <span>〰️</span> Liquid Silk
+      </button>
+    </div>
+
+    <!-- Canvas Breathing Stage -->
+    <div class="visualizer-container" id="visualizer-container" title="Move cursor or tilt device for gravity parallax">
+      <canvas id="zen-canvas"></canvas>
+
+      <!-- Center Orb HUD -->
+      <div class="orb-hud">
+        <h1 id="phase-title" class="phase-heading">Inhale</h1>
+        <div id="countdown-timer" class="countdown-display">4.0s</div>
+        <p id="phase-cue" class="phase-instruction">Breathe in steadily through your nose</p>
+      </div>
+    </div>
+
+    <!-- Progress & Session Metadata -->
+    <div class="session-progress-wrapper">
+      <div id="session-progress-fill" class="session-progress-fill"></div>
+    </div>
+
+    <div class="session-meta-stats">
+      <span>Time: <strong id="session-time-display" style="color: var(--text-main);">0:00</strong></span>
+      <span>Cycles: <strong id="cycles-count" style="color: var(--text-main);">0</strong></span>
+    </div>
+
+    <!-- Primary Control Actions -->
+    <div class="action-bar">
+      <button id="play-btn" class="primary-btn">
+        <span id="play-btn-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+        </span>
+        <span id="play-btn-text">Begin Reset</span>
+      </button>
+
+      <button id="reset-btn" class="icon-btn" title="Reset Session (R)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="1 4 1 10 7 10"></polyline>
+          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Target Duration Chips -->
+    <div id="duration-selector-bar" class="duration-selector" aria-label="Target Session Durations">
+      <button class="duration-pill active" data-duration="60">60s Reset</button>
+      <button class="duration-pill" data-duration="180">3 Min Focus</button>
+      <button class="duration-pill" data-duration="300">5 Min Calm</button>
+      <button class="duration-pill" data-duration="0">Freeflow</button>
+    </div>
+
+    <!-- Keyboard Shortcuts Legend -->
+    <footer class="keyboard-hints">
+      <span><kbd>Space</kbd> Start / Pause</span>
+      <span><kbd>F</kbd> Zen Fullscreen</span>
+      <span><kbd>H</kbd> Heart Sync</span>
+      <span><kbd>M</kbd> Mute</span>
+      <span><kbd>1-5</kbd> Modes</span>
+    </footer>
+
+  </main>
+
+  <!-- Procedural Sound Control Drawer -->
+  <aside id="sound-drawer" class="sound-drawer" aria-label="Audio Synthesizer Settings">
+    <div class="drawer-header">
+      <div class="drawer-title">Sound Synthesizer</div>
+      <button id="close-sound-drawer" class="icon-btn" title="Close Panel">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <!-- 1-Click Soundscape Presets -->
+    <div class="preset-section">
+      <div class="section-label">Soundscape Presets</div>
+      <div class="preset-grid">
+        <button class="preset-btn active" data-preset="temple">
+          <span class="icon">🧘</span>
+          <span>Temple Zen</span>
+        </button>
+        <button class="preset-btn" data-preset="ocean">
+          <span class="icon">🌊</span>
+          <span>Midnight Coast</span>
+        </button>
+        <button class="preset-btn" data-preset="alpha">
+          <span class="icon">🧠</span>
+          <span>Alpha Focus</span>
+        </button>
+        <button class="preset-btn" data-preset="chimes">
+          <span class="icon">🔔</span>
+          <span>Chimes Only</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 8D Spatial Audio Orbit Toggle -->
+    <div class="feature-toggle-row">
+      <div class="feature-toggle-info">
+        <span class="feature-toggle-title">8D Spatial Audio Orbit</span>
+        <span class="feature-toggle-desc">360° rotating soundscape (use headphones)</span>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="spatial-audio-toggle" checked>
+        <span class="slider-switch"></span>
+      </label>
+    </div>
+
+    <!-- Voice Guide Prompt Toggle & Language Selector -->
+    <div class="feature-toggle-row">
+      <div class="feature-toggle-info">
+        <span class="feature-toggle-title">Guided Voice Cues</span>
+        <span class="feature-toggle-desc">Whispered cues for eyes-closed breathwork</span>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="voice-guide-toggle">
+        <span class="slider-switch"></span>
+      </label>
+    </div>
+
+    <div class="lang-selector-row">
+      <div class="section-label" style="margin-bottom: 0.4rem;">Voice Language</div>
+      <select id="voice-lang-select" class="lang-select">
+        <option value="en">🇬🇧 English (Inhale / Exhale)</option>
+        <option value="es">🇪🇸 Español (Inhala / Exhala)</option>
+        <option value="fr">🇫🇷 Français (Inspirez / Expirez)</option>
+        <option value="ja">🇯🇵 日本語 (吸って / 吐いて)</option>
+        <option value="de">🇩🇪 Deutsch (Einatmen / Ausatmen)</option>
+        <option value="hi">🇮🇳 हिन्दी (सांस अंदर / बाहर)</option>
+        <option value="te">🇮🇳 తెలుగు / Telugu (శ్వాస తీసుకోండి / వదలండి)</option>
+      </select>
+    </div>
+
+    <!-- Individual Audio Controls -->
+    <div class="section-label">Acoustic Levels</div>
+
+    <div class="sound-control-group">
+      <div class="sound-label-row">
+        <span>Master Output</span>
+      </div>
+      <p class="sound-desc">Overall sound balance level</p>
+      <input type="range" id="master-vol" min="0" max="1" step="0.05" value="0.75">
+    </div>
+
+    <div class="sound-control-group">
+      <div class="sound-label-row">
+        <span>Tibetan Singing Bowl</span>
+      </div>
+      <p class="sound-desc">Solfeggio harmonic chime on phase transitions</p>
+      <input type="range" id="bell-vol" min="0" max="1" step="0.05" value="0.9">
+    </div>
+
+    <div class="sound-control-group">
+      <div class="sound-label-row">
+        <span>Breath-Synced Tidal Wave</span>
+      </div>
+      <p class="sound-desc">Real-time modulated acoustic ocean surf</p>
+      <input type="range" id="wave-vol" min="0" max="1" step="0.05" value="0.2">
+    </div>
+
+    <div class="sound-control-group">
+      <div class="sound-label-row">
+        <span>Deep Brown Noise</span>
+      </div>
+      <p class="sound-desc">Warm, low-frequency white/brown noise buffer</p>
+      <input type="range" id="noise-vol" min="0" max="1" step="0.05" value="0.25">
+    </div>
+
+    <div class="sound-control-group">
+      <div class="sound-label-row">
+        <span>10 Hz Alpha Binaural Drone</span>
+      </div>
+      <p class="sound-desc">Dual carrier wave for relaxed focus (use headphones)</p>
+      <input type="range" id="binaural-vol" min="0" max="1" step="0.05" value="0.45">
+    </div>
+  </aside>
+
+  <!-- Heartbeat Tap-to-Sync Modal -->
+  <div id="heartbeat-modal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-card custom-modal-card">
+      <div class="modal-badge">
+        <span>🫀</span> Heart Rate Biofeedback
+      </div>
+      <h2 class="modal-title">Sync Heartbeat</h2>
+      <p class="modal-subtitle">Gently tap the heart icon in rhythm with your pulse for 5-8 taps.</p>
+
+      <div id="heartbeat-tap-btn" class="heartbeat-tap-area">
+        <div class="tap-heart-icon">❤️</div>
+        <div id="tap-feedback-text" class="tap-counter-text">Tap Here</div>
+      </div>
+
+      <div id="heartbeat-calc-display" style="font-size: 1.15rem; font-weight: 700; color: var(--phase-accent); margin-bottom: 0.5rem; min-height: 24px;"></div>
+      <p id="coherence-calc-desc" style="font-size: 0.8rem; color: var(--text-faint); margin-bottom: 1.25rem;">Live EKG trace will appear at the bottom of the screen.</p>
+
+      <button id="apply-heartbeat-btn" class="save-custom-btn" style="display: none;">Apply & Lock Coherence</button>
+      <button id="close-heartbeat-modal" class="close-modal-btn" style="width: 100%; margin-top: 0.5rem;">Done</button>
+    </div>
+  </div>
+
+  <!-- Custom Rhythm Builder Modal -->
+  <div id="custom-rhythm-modal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-card custom-modal-card">
+      <div class="modal-badge">
+        <span>⚙️</span> Custom Protocol
+      </div>
+      <h2 class="modal-title">Customize Rhythm</h2>
+      <p class="modal-subtitle">Dial in your personal intervals for inhale, hold, and exhale.</p>
+
+      <div class="slider-row">
+        <div class="slider-header">
+          <span>Inhale Duration</span>
+          <span id="custom-inhale-val" style="color: var(--phase-accent);">4.0s</span>
+        </div>
+        <input type="range" id="custom-inhale-slider" min="2" max="10" step="0.5" value="4">
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-header">
+          <span>Hold After Inhale</span>
+          <span id="custom-hold-val" style="color: var(--phase-accent);">4.0s</span>
+        </div>
+        <input type="range" id="custom-hold-slider" min="0" max="12" step="0.5" value="4">
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-header">
+          <span>Exhale Duration</span>
+          <span id="custom-exhale-val" style="color: var(--phase-accent);">4.0s</span>
+        </div>
+        <input type="range" id="custom-exhale-slider" min="2" max="12" step="0.5" value="4">
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-header">
+          <span>Rest / Hold After Exhale</span>
+          <span id="custom-rest-val" style="color: var(--phase-accent);">2.0s</span>
+        </div>
+        <input type="range" id="custom-rest-slider" min="0" max="8" step="0.5" value="2">
+      </div>
+
+      <button id="save-custom-btn" class="save-custom-btn">Save & Apply Rhythm</button>
+      <button id="close-custom-modal" class="close-modal-btn" style="width: 100%; margin-top: 0.5rem;">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Session Completion Celebration Modal -->
+  <div id="completion-modal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-badge">
+        <span>✨</span> Reset Completed
+      </div>
+      <h2 class="modal-title">Clarity Restored</h2>
+      <p class="modal-subtitle">Your nervous system has downshifted. Take this calm into your next task.</p>
+
+      <div class="modal-stats-grid">
+        <div class="stat-box">
+          <div id="modal-stats-time" class="stat-value">60s</div>
+          <div class="stat-label">Mindful Time</div>
+        </div>
+        <div class="stat-box">
+          <div id="modal-stats-breaths" class="stat-value">4</div>
+          <div class="stat-label">Cycles</div>
+        </div>
+        <div class="stat-box">
+          <div id="modal-stats-reduction" class="stat-value">~24%</div>
+          <div class="stat-label">Stress Drop</div>
+        </div>
+      </div>
+
+      <div class="modal-quote-block">
+        <div id="modal-quote-text" class="modal-quote-text">"Feelings come and go like clouds in a windy sky. Conscious breathing is my anchor."</div>
+        <div id="modal-quote-author" class="modal-quote-author">— Thích Nhất Hạnh</div>
+      </div>
+
+      <div class="modal-actions">
+        <!-- Download Visual Image Card -->
+        <button id="download-card-btn" class="card-download-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Download Share Card (PNG)
+        </button>
+
+        <!-- LinkedIn Text Snippet -->
+        <button id="copy-share-btn" class="share-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9h2.78v8.37H6.46v-8.37M7.85 6.46c-.96 0-1.74.78-1.74 1.74s.78 1.74 1.74 1.74 1.74-.78 1.74-1.74-.78-1.74-1.74-1.74Z"/>
+          </svg>
+          Copy LinkedIn Reflection Snippet
+        </button>
+        <button id="close-completion-modal" class="close-modal-btn">Done & Return</button>
+      </div>
+      <div id="share-feedback" class="share-feedback">Copied to clipboard!</div>
+    </div>
+  </div>
+
+  <!-- Hidden Canvas for Off-Screen Share Card Generation -->
+  <canvas id="offscreen-card-canvas" width="1200" height="675" style="display: none;"></canvas>
+
+  <!-- Scripts -->
+  <script src="js/audio-engine.js"></script>
+  <script src="js/visualizer.js"></script>
+  <script src="js/breathing-engine.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
