@@ -3,7 +3,7 @@
  * Enables 100% offline capability & instant loading via CacheFirst strategy.
  */
 
-const CACHE_NAME = 'tabzen-cache-v1';
+const CACHE_NAME = 'tabzen-cache-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

@@ -99,6 +99,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const shortcutsModal = document.getElementById('shortcuts-modal');
   const closeShortcutsModal = document.getElementById('close-shortcuts-modal');
 
+  // Zen Studio Tools Modal Elements
+  const zenMenuBtn = document.getElementById('zen-menu-btn');
+  const zenToolsModal = document.getElementById('zen-tools-modal');
+  const closeZenToolsModal = document.getElementById('close-zen-tools-modal');
+  const closeZenToolsFooterBtn = document.getElementById('close-zen-tools-footer-btn');
+
+  // Crystal Bowls Instrument Toggle
+  const toggleChimesBtn = document.getElementById('toggle-chimes-btn');
+  const zenKeyboardDockSection = document.getElementById('zen-keyboard-dock-section');
+
+  // Dedicated Pomodoro HUD
+  const pomodoroHudBanner = document.getElementById('pomodoro-hud-banner');
+  const pomodoroPhaseLabel = document.getElementById('pomodoro-phase-label');
+
+  // Completion Modal Hero Actions
+  const repeatSessionBtn = document.getElementById('repeat-session-btn');
+  const viewInsightsBtn = document.getElementById('view-insights-btn');
+
   // Video Recording Elements
   const recordVideoBtn = document.getElementById('record-video-btn');
   const recordBtnText = document.getElementById('record-btn-text');
@@ -537,6 +555,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function playCrystalBowl(idx, fromKeyEl = null) {
     if (idx < 0 || idx > 8) return;
+
+    if (zenKeyboardDockSection && zenKeyboardDockSection.style.display === 'none') {
+      zenKeyboardDockSection.style.display = 'block';
+      if (toggleChimesBtn) {
+        toggleChimesBtn.classList.add('active');
+        toggleChimesBtn.setAttribute('aria-expanded', 'true');
+        const arrow = toggleChimesBtn.querySelector('.chimes-arrow');
+        if (arrow) arrow.textContent = '▴';
+      }
+    }
+
     audioEngine.resume();
     audioEngine.playTunedNote(idx);
 
@@ -577,6 +606,18 @@ document.addEventListener('DOMContentLoaded', () => {
       playCrystalBowl(noteIdx, btn);
     });
   });
+
+  // Toggle Chimes Dock
+  if (toggleChimesBtn && zenKeyboardDockSection) {
+    toggleChimesBtn.addEventListener('click', () => {
+      const isHidden = zenKeyboardDockSection.style.display === 'none';
+      zenKeyboardDockSection.style.display = isHidden ? 'block' : 'none';
+      toggleChimesBtn.setAttribute('aria-expanded', isHidden);
+      toggleChimesBtn.classList.toggle('active', isHidden);
+      const arrow = toggleChimesBtn.querySelector('.chimes-arrow');
+      if (arrow) arrow.textContent = isHidden ? '▴' : '▾';
+    });
+  }
 
   // Theme Management
   function applyTheme(themeId) {
@@ -744,13 +785,22 @@ document.addEventListener('DOMContentLoaded', () => {
         audioEngine.updateBreathWave(state.phase, state.phaseProgress);
       }
 
-      phaseTitle.textContent = state.phaseName;
-      phaseCue.textContent = state.phaseCue;
-
-      if (state.appMode === 'pomodoro' && state.pomodoroPhase === 'work') {
-        countdownTimer.textContent = state.pomodoroDisplay;
+      if (state.appMode === 'pomodoro') {
+        if (state.pomodoroPhase === 'work') {
+          countdownTimer.textContent = state.pomodoroDisplay;
+          phaseTitle.textContent = 'Deep Work';
+          phaseCue.textContent = 'Focused attention sprint • Breathe naturally';
+          if (pomodoroPhaseLabel) pomodoroPhaseLabel.textContent = `Deep Work Focus (${state.pomodoroDisplay} remaining)`;
+        } else {
+          countdownTimer.textContent = state.phaseTimeRemaining.toFixed(1) + 's';
+          phaseTitle.textContent = state.phaseName;
+          phaseCue.textContent = state.phaseCue;
+          if (pomodoroPhaseLabel) pomodoroPhaseLabel.textContent = 'Mindful Breath Break • Downshift & Recharge';
+        }
       } else {
         countdownTimer.textContent = state.phaseTimeRemaining.toFixed(1) + 's';
+        phaseTitle.textContent = state.phaseName;
+        phaseCue.textContent = state.phaseCue;
       }
 
       document.body.setAttribute('data-phase', state.phase);
@@ -776,6 +826,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (to === 'break') {
         audioEngine.playBell('inhale');
         voiceWhisperer.speak('inhale');
+        if (pomodoroPhaseLabel) pomodoroPhaseLabel.textContent = 'Mindful Breath Break • Downshift & Recharge';
+      } else {
+        if (pomodoroPhaseLabel) pomodoroPhaseLabel.textContent = 'Deep Work Focus (25m)';
       }
     },
     onSessionComplete: (stats) => {
@@ -794,18 +847,24 @@ document.addEventListener('DOMContentLoaded', () => {
   // App Mode Switch (Micro-Reset vs Pomodoro Flow)
   modeResetBtn.addEventListener('click', () => {
     modeResetBtn.classList.add('active');
+    modeResetBtn.setAttribute('aria-pressed', 'true');
     modePomodoroBtn.classList.remove('active');
+    modePomodoroBtn.setAttribute('aria-pressed', 'false');
     protocolSelectorBar.style.display = 'flex';
     durationSelectorBar.style.display = 'flex';
+    if (pomodoroHudBanner) pomodoroHudBanner.style.display = 'none';
     breathingEngine.setAppMode('reset');
     updatePlayBtn(false);
   });
 
   modePomodoroBtn.addEventListener('click', () => {
     modePomodoroBtn.classList.add('active');
+    modePomodoroBtn.setAttribute('aria-pressed', 'true');
     modeResetBtn.classList.remove('active');
+    modeResetBtn.setAttribute('aria-pressed', 'false');
     protocolSelectorBar.style.display = 'none';
     durationSelectorBar.style.display = 'none';
+    if (pomodoroHudBanner) pomodoroHudBanner.style.display = 'flex';
     breathingEngine.setAppMode('pomodoro');
     updatePlayBtn(false);
   });
@@ -1192,6 +1251,35 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Zen Studio Tools Modal Handlers
+  const closeZenTools = () => {
+    if (zenToolsModal) zenToolsModal.classList.remove('show');
+  };
+
+  if (zenMenuBtn && zenToolsModal) {
+    zenMenuBtn.addEventListener('click', () => {
+      zenToolsModal.classList.add('show');
+    });
+  }
+
+  if (closeZenToolsModal) closeZenToolsModal.addEventListener('click', closeZenTools);
+  if (closeZenToolsFooterBtn) closeZenToolsFooterBtn.addEventListener('click', closeZenTools);
+  if (zenToolsModal) {
+    zenToolsModal.addEventListener('click', (e) => {
+      if (e.target === zenToolsModal) closeZenTools();
+    });
+  }
+
+  if (openAnalyticsBtn) {
+    openAnalyticsBtn.addEventListener('click', closeZenTools);
+  }
+  if (openHeartbeatBtn) {
+    openHeartbeatBtn.addEventListener('click', closeZenTools);
+  }
+  if (openShortcutsBtn) {
+    openShortcutsBtn.addEventListener('click', closeZenTools);
+  }
+
   // Keyboard Shortcuts (Space, F, H, M, R, 1-5, ?, Esc, and A-L Crystal Chimes)
   window.addEventListener('keydown', (e) => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
@@ -1229,6 +1317,7 @@ document.addEventListener('DOMContentLoaded', () => {
         shortcutsModal.classList.toggle('show');
       }
     } else if (e.key === 'Escape') {
+      if (zenToolsModal && zenToolsModal.classList.contains('show')) zenToolsModal.classList.remove('show');
       if (shortcutsModal && shortcutsModal.classList.contains('show')) shortcutsModal.classList.remove('show');
       if (customModal && customModal.classList.contains('show')) customModal.classList.remove('show');
       if (analyticsModal && analyticsModal.classList.contains('show')) analyticsModal.classList.remove('show');
@@ -1280,6 +1369,21 @@ document.addEventListener('DOMContentLoaded', () => {
   closeCompletionModal.addEventListener('click', () => {
     completionModal.classList.remove('show');
   });
+
+  if (repeatSessionBtn) {
+    repeatSessionBtn.addEventListener('click', () => {
+      completionModal.classList.remove('show');
+      togglePlay();
+    });
+  }
+
+  if (viewInsightsBtn) {
+    viewInsightsBtn.addEventListener('click', () => {
+      completionModal.classList.remove('show');
+      renderAnalyticsModal();
+      analyticsModal.classList.add('show');
+    });
+  }
 
   // 1-Click Direct LinkedIn Post Composer
   if (linkedinDirectBtn) {
