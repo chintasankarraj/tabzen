@@ -7,7 +7,12 @@
   <meta name="description" content="A calm, premium breathwork visualizer, ambient sound synthesizer, and Pomodoro deep-work companion built with pure Web Audio API and HTML5 Canvas.">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#07090e">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%232dd4bf'/><circle cx='50' cy='50' r='24' fill='%2307090e'/></svg>">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TabZen">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body data-theme="cosmic" data-phase="inhale">
@@ -442,23 +447,23 @@
     <div class="feature-toggles-card">
       <div class="feature-toggle-row">
         <div class="feature-toggle-info">
-          <span class="feature-toggle-title">8D Spatial Audio Orbit</span>
-          <span class="feature-toggle-desc">360° rotating soundscape (use headphones)</span>
+          <span class="feature-toggle-title" id="spatial-audio-title">8D Spatial Audio Orbit</span>
+          <span class="feature-toggle-desc" id="spatial-audio-desc">360° rotating soundscape (use headphones)</span>
         </div>
-        <label class="switch">
-          <input type="checkbox" id="spatial-audio-toggle" checked>
-          <span class="slider-switch"></span>
+        <label class="switch" for="spatial-audio-toggle">
+          <input type="checkbox" id="spatial-audio-toggle" checked aria-labelledby="spatial-audio-title" aria-describedby="spatial-audio-desc">
+          <span class="slider-switch" aria-hidden="true"></span>
         </label>
       </div>
 
       <div class="feature-toggle-row">
         <div class="feature-toggle-info">
-          <span class="feature-toggle-title">Guided Voice Cues</span>
-          <span class="feature-toggle-desc">Whispered cues for eyes-closed breathwork</span>
+          <span class="feature-toggle-title" id="voice-guide-title">Guided Voice Cues</span>
+          <span class="feature-toggle-desc" id="voice-guide-desc">Whispered cues for eyes-closed breathwork</span>
         </div>
-        <label class="switch">
-          <input type="checkbox" id="voice-guide-toggle">
-          <span class="slider-switch"></span>
+        <label class="switch" for="voice-guide-toggle">
+          <input type="checkbox" id="voice-guide-toggle" aria-labelledby="voice-guide-title" aria-describedby="voice-guide-desc">
+          <span class="slider-switch" aria-hidden="true"></span>
         </label>
       </div>
 
@@ -692,6 +697,29 @@
           <!-- Dynamically rendered past 7 days -->
         </div>
         <div id="heatmap-tooltip" class="heatmap-tooltip"></div>
+      </div>
+
+      <!-- Data Portability / Export Section -->
+      <div class="analytics-export-section">
+        <div class="analytics-export-label">Export Data</div>
+        <div class="analytics-export-grid">
+          <button id="export-json-btn" class="export-data-btn" title="Export session history and metrics as JSON">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span>Export JSON</span>
+          </button>
+          <button id="export-csv-btn" class="export-data-btn" title="Export daily mindful activity log as CSV">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span>Export CSV</span>
+          </button>
+        </div>
       </div>
 
       <div class="analytics-footer">

@@ -147,6 +147,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const analyticsStreak = document.getElementById('analytics-streak');
   const heatmapGrid = document.getElementById('heatmap-grid');
   const heatmapTooltip = document.getElementById('heatmap-tooltip');
+  const exportJsonBtn = document.getElementById('export-json-btn');
+  const exportCsvBtn = document.getElementById('export-csv-btn');
 
   // Interactive Crystal Bowl Keys
   const zenKeyButtons = document.querySelectorAll('.zen-key');
@@ -201,6 +203,68 @@ document.addEventListener('DOMContentLoaded', () => {
   let tapTimestamps = [];
   let calculatedBPM = null;
   let isCardiacCoherenceLocked = false;
+
+  // ==========================================================================
+  // ACCESSIBLE MODAL & DRAWER SYSTEM (WCAG 2.4.3 Focus Order & 2.1.2 Keyboard Trap Protection)
+  // ==========================================================================
+  let activeModalTrigger = null;
+
+  function openAccessibleModal(modalEl, triggerEl = null) {
+    if (!modalEl) return;
+    activeModalTrigger = triggerEl || document.activeElement;
+    modalEl.classList.add('show');
+
+    // Move keyboard focus inside the modal dialog
+    setTimeout(() => {
+      const focusables = modalEl.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
+      if (focusables.length > 0) {
+        const closeBtn = modalEl.querySelector('.icon-close-btn') || focusables[0];
+        closeBtn.focus();
+      }
+    }, 40);
+  }
+
+  function closeAccessibleModal(modalEl) {
+    if (!modalEl || !modalEl.classList.contains('show')) return;
+    modalEl.classList.remove('show');
+    if (activeModalTrigger && typeof activeModalTrigger.focus === 'function') {
+      try {
+        activeModalTrigger.focus();
+      } catch (err) {}
+      activeModalTrigger = null;
+    }
+  }
+
+  // Universal Backdrop Click Handler for Modals
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        closeAccessibleModal(overlay);
+      }
+    });
+  });
+
+  // Modal Focus Trap for Keyboard Navigation
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab') {
+      const openModals = document.querySelectorAll('.modal-overlay.show');
+      if (openModals.length > 0) {
+        const topModal = openModals[openModals.length - 1];
+        const focusables = Array.from(topModal.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'));
+        if (focusables.length > 0) {
+          const first = focusables[0];
+          const last = focusables[focusables.length - 1];
+          if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
+    }
+  });
 
   // Visualizer Mode Selection
   vizModeButtons.forEach(btn => {
@@ -287,37 +351,73 @@ document.addEventListener('DOMContentLoaded', () => {
   // Heartbeat Tap-to-Sync Engine
   openHeartbeatBtn.addEventListener('click', () => {
     tapTimestamps = [];
+    calculatedBPM = null;
     heartbeatCalcDisplay.textContent = '';
     tapFeedbackText.textContent = 'Tap Here';
     applyHeartbeatBtn.style.display = 'none';
-    heartbeatModal.classList.add('show');
+    openAccessibleModal(heartbeatModal, openHeartbeatBtn);
   });
 
-  closeHeartbeatModal.addEventListener('click', () => heartbeatModal.classList.remove('show'));
+  closeHeartbeatModal.addEventListener('click', () => closeAccessibleModal(heartbeatModal));
 
   heartbeatTapBtn.addEventListener('click', () => {
     const now = performance.now();
+
+    // Reset old tap history if interval between consecutive taps exceeds 2.5 seconds
+    if (tapTimestamps.length > 0) {
+      const lastTap = tapTimestamps[tapTimestamps.length - 1];
+      if (now - lastTap > 2500) {
+        tapTimestamps = [];
+        calculatedBPM = null;
+        applyHeartbeatBtn.style.display = 'none';
+      }
+    }
+
     tapTimestamps.push(now);
 
-    // Keep last 8 taps
+    // Keep last 8 valid taps
     if (tapTimestamps.length > 8) tapTimestamps.shift();
 
-    tapFeedbackText.textContent = `${tapTimestamps.length} / 6 taps`;
+    const count = tapTimestamps.length;
+    tapFeedbackText.textContent = `${count} / 6 taps`;
 
-    if (tapTimestamps.length >= 4) {
-      // Calculate average inter-tap interval
-      let totalIntervalMs = 0;
-      for (let i = 1; i < tapTimestamps.length; i++) {
-        totalIntervalMs += (tapTimestamps[i] - tapTimestamps[i - 1]);
-      }
-      const avgIntervalSec = (totalIntervalMs / (tapTimestamps.length - 1)) / 1000;
-      const bpm = Math.round(60 / avgIntervalSec);
+    // Need at least 4 valid taps (3 intervals) to estimate pulse
+    if (count < 4) {
+      heartbeatCalcDisplay.textContent = 'Keep tapping steadily...';
+      applyHeartbeatBtn.style.display = 'none';
+      return;
+    }
 
-      if (bpm >= 45 && bpm <= 140) {
-        calculatedBPM = bpm;
-        heartbeatCalcDisplay.textContent = `Pulse: ${calculatedBPM} BPM`;
-        applyHeartbeatBtn.style.display = 'block';
-      }
+    // Compute intervals between recent consecutive taps
+    const intervals = [];
+    for (let i = 1; i < count; i++) {
+      intervals.push(tapTimestamps[i] - tapTimestamps[i - 1]);
+    }
+
+    const avgIntervalMs = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+    const avgIntervalSec = avgIntervalMs / 1000;
+    const bpm = Math.round(60 / avgIntervalSec);
+
+    // Irregular rhythm detection: ensure taps are reasonably consistent (<= 35% variance)
+    const isRegular = intervals.every(iv => Math.abs(iv - avgIntervalMs) / avgIntervalMs <= 0.35);
+
+    if (!isRegular) {
+      heartbeatCalcDisplay.textContent = 'Keep a steady rhythm...';
+      applyHeartbeatBtn.style.display = 'none';
+      return;
+    }
+
+    // Boundary validation (45 - 140 BPM)
+    if (bpm < 45) {
+      heartbeatCalcDisplay.textContent = 'Rhythm too slow (< 45 BPM)';
+      applyHeartbeatBtn.style.display = 'none';
+    } else if (bpm > 140) {
+      heartbeatCalcDisplay.textContent = 'Rhythm too fast (> 140 BPM)';
+      applyHeartbeatBtn.style.display = 'none';
+    } else {
+      calculatedBPM = bpm;
+      heartbeatCalcDisplay.textContent = `Pulse: ${calculatedBPM} BPM`;
+      applyHeartbeatBtn.style.display = 'block';
     }
   });
 
@@ -330,7 +430,7 @@ document.addEventListener('DOMContentLoaded', () => {
       ekgBadgeText.textContent = `${calculatedBPM} BPM${isCardiacCoherenceLocked ? ' • Locked ✨' : ''}`;
       openHeartbeatBtn.classList.toggle('locked', isCardiacCoherenceLocked);
 
-      heartbeatModal.classList.remove('show');
+      closeAccessibleModal(heartbeatModal);
     }
   });
 
@@ -369,38 +469,75 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Helper for consistent local calendar dates (YYYY-MM-DD)
+  function getLocalDateString(d = new Date()) {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function getDayDifference(dateStr1, dateStr2) {
+    if (!dateStr1 || !dateStr2) return 999;
+    const [y1, m1, d1] = dateStr1.split('-').map(Number);
+    const [y2, m2, d2] = dateStr2.split('-').map(Number);
+    const utc1 = Date.UTC(y1, m1 - 1, d1);
+    const utc2 = Date.UTC(y2, m2 - 1, d2);
+    return Math.round((utc2 - utc1) / (1000 * 60 * 60 * 24));
+  }
+
   // Streak, Consistency & Analytics Storage
   const statsStorage = {
     get: () => {
+      const today = getLocalDateString();
+      let stats = null;
       try {
         const parsed = JSON.parse(localStorage.getItem('tabzen_stats'));
         if (parsed && typeof parsed === 'object') {
-          return {
+          stats = {
             totalMinutes: parsed.totalMinutes || 0,
             totalSeconds: parsed.totalSeconds || 0,
             totalSessions: parsed.totalSessions || 0,
             totalBreaths: parsed.totalBreaths || 0,
             lastActiveDate: parsed.lastActiveDate || null,
-            currentStreak: parsed.currentStreak || 1,
-            bestStreak: parsed.bestStreak || parsed.currentStreak || 1,
+            currentStreak: typeof parsed.currentStreak === 'number' ? parsed.currentStreak : 0,
+            bestStreak: typeof parsed.bestStreak === 'number' ? parsed.bestStreak : 0,
             dailyLog: parsed.dailyLog || {}
           };
         }
       } catch (e) {}
-      return {
-        totalMinutes: 0,
-        totalSeconds: 0,
-        totalSessions: 0,
-        totalBreaths: 0,
-        lastActiveDate: null,
-        currentStreak: 1,
-        bestStreak: 1,
-        dailyLog: {}
-      };
+
+      if (!stats) {
+        stats = {
+          totalMinutes: 0,
+          totalSeconds: 0,
+          totalSessions: 0,
+          totalBreaths: 0,
+          lastActiveDate: null,
+          currentStreak: 0,
+          bestStreak: 0,
+          dailyLog: {}
+        };
+      }
+
+      // Initial user with 0 sessions must have streak 0
+      if (stats.totalSessions === 0) {
+        stats.currentStreak = 0;
+      } else if (stats.lastActiveDate) {
+        // Recalculate stale streaks: if last active is more than 1 calendar day ago, streak decays to 0
+        const diffDays = getDayDifference(stats.lastActiveDate, today);
+        if (diffDays > 1) {
+          stats.currentStreak = 0;
+        }
+      } else {
+        stats.currentStreak = 0;
+      }
+
+      return stats;
     },
     saveSession: (durationSec, completedCycles = 1) => {
       const stats = statsStorage.get();
-      const today = new Date().toISOString().split('T')[0];
+      const today = getLocalDateString();
       const mins = Math.max(1, Math.round(durationSec / 60));
       const cycles = Math.max(1, completedCycles || 1);
 
@@ -420,19 +557,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Streak calculation
       if (stats.lastActiveDate) {
-        const last = new Date(stats.lastActiveDate);
-        const cur = new Date(today);
-        const diffDays = Math.round((cur - last) / (1000 * 60 * 60 * 24));
-        if (diffDays === 1) {
+        const diffDays = getDayDifference(stats.lastActiveDate, today);
+        if (diffDays === 0) {
+          // Same calendar day: maintain existing streak (or initialize to 1)
+          stats.currentStreak = Math.max(1, stats.currentStreak);
+        } else if (diffDays === 1) {
+          // Consecutive calendar day: increment streak!
           stats.currentStreak += 1;
-        } else if (diffDays > 1) {
+        } else {
+          // More than 1 day gap: start fresh streak of 1
           stats.currentStreak = 1;
         }
       } else {
+        // First session ever
         stats.currentStreak = 1;
       }
 
-      if (stats.currentStreak > (stats.bestStreak || 1)) {
+      if (stats.currentStreak > (stats.bestStreak || 0)) {
         stats.bestStreak = stats.currentStreak;
       }
       stats.lastActiveDate = today;
@@ -445,7 +586,7 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     clear: () => {
       localStorage.removeItem('tabzen_stats');
-      if (streakCountDisplay) streakCountDisplay.textContent = '1';
+      if (streakCountDisplay) streakCountDisplay.textContent = '0';
     }
   };
 
@@ -473,7 +614,7 @@ document.addEventListener('DOMContentLoaded', () => {
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(now.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
+      const dateStr = getLocalDateString(d);
       const dayName = dayNames[d.getDay()];
       const dayNum = d.getDate();
 
@@ -525,13 +666,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (openAnalyticsBtn) {
     openAnalyticsBtn.addEventListener('click', () => {
       renderAnalyticsModal();
-      analyticsModal.classList.add('show');
+      openAccessibleModal(analyticsModal, openAnalyticsBtn);
     });
   }
 
   if (closeAnalyticsModal) {
     closeAnalyticsModal.addEventListener('click', () => {
-      analyticsModal.classList.remove('show');
+      closeAccessibleModal(analyticsModal);
     });
   }
 
@@ -540,6 +681,97 @@ document.addEventListener('DOMContentLoaded', () => {
       if (confirm('Reset your local mindful reset history and heatmap?')) {
         statsStorage.clear();
         renderAnalyticsModal();
+      }
+    });
+  }
+
+  // CSV escaping helper: escapes quotes, commas, and newlines per RFC 4180
+  function escapeCSVCell(val) {
+    if (val === null || val === undefined) return '';
+    const str = String(val);
+    if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  }
+
+  // Download Blob Helper: creates object URL and auto-revokes
+  function downloadBlob(content, filename, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
+
+  // Export Analytics as JSON
+  if (exportJsonBtn) {
+    exportJsonBtn.addEventListener('click', () => {
+      const stats = statsStorage.get();
+      const exportData = {
+        app: 'TabZen',
+        version: '2.0.0',
+        exportedAt: new Date().toISOString(),
+        summary: {
+          totalMinutes: stats.totalMinutes,
+          totalSeconds: stats.totalSeconds,
+          totalSessions: stats.totalSessions,
+          totalBreaths: stats.totalBreaths,
+          currentStreak: stats.currentStreak,
+          bestStreak: stats.bestStreak,
+          lastActiveDate: stats.lastActiveDate
+        },
+        dailyLog: stats.dailyLog || {}
+      };
+
+      const jsonStr = JSON.stringify(exportData, null, 2);
+      downloadBlob(jsonStr, `tabzen-analytics-${getLocalDateString()}.json`, 'application/json');
+
+      if (shareFeedback) {
+        shareFeedback.textContent = '📊 Mindful data exported as JSON!';
+        shareFeedback.classList.add('visible');
+        setTimeout(() => shareFeedback.classList.remove('visible'), 3500);
+      }
+    });
+  }
+
+  // Export Daily Activity as CSV
+  if (exportCsvBtn) {
+    exportCsvBtn.addEventListener('click', () => {
+      const stats = statsStorage.get();
+      const headers = ['Date', 'Sessions', 'Minutes', 'Seconds', 'Breaths'];
+      const rows = [headers.join(',')];
+
+      const dailyLog = stats.dailyLog || {};
+      const dates = Object.keys(dailyLog).sort();
+
+      if (dates.length > 0) {
+        dates.forEach(dateKey => {
+          const entry = dailyLog[dateKey] || {};
+          const row = [
+            escapeCSVCell(dateKey),
+            escapeCSVCell(entry.sessions || 0),
+            escapeCSVCell(entry.minutes || 0),
+            escapeCSVCell(entry.seconds || 0),
+            escapeCSVCell(entry.breaths || 0)
+          ];
+          rows.push(row.join(','));
+        });
+      } else {
+        rows.push('No recorded activity,0,0,0,0');
+      }
+
+      const csvStr = rows.join('\r\n');
+      downloadBlob(csvStr, `tabzen-activity-${getLocalDateString()}.csv`, 'text/csv;charset=utf-8;');
+
+      if (shareFeedback) {
+        shareFeedback.textContent = '📈 Daily activity log exported as CSV!';
+        shareFeedback.classList.add('visible');
+        setTimeout(() => shareFeedback.classList.remove('visible'), 3500);
       }
     });
   }
@@ -598,13 +830,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Attach touch/click listeners to on-screen Zen keys
+  // Attach touch/click listeners to on-screen Zen keys with debounce protection
+  let lastBowlTapTime = 0;
   zenKeyButtons.forEach(btn => {
     const noteIdx = parseInt(btn.dataset.noteIdx, 10);
-    btn.addEventListener('click', (e) => {
+    const triggerNote = (e) => {
       e.preventDefault();
+      const now = performance.now();
+      if (now - lastBowlTapTime < 80) return; // Prevent accidental duplicate micro-activations
+      lastBowlTapTime = now;
       playCrystalBowl(noteIdx, btn);
-    });
+    };
+
+    btn.addEventListener('pointerdown', triggerNote);
+    btn.addEventListener('click', (e) => e.preventDefault());
   });
 
   // Toggle Chimes Dock
@@ -824,8 +1063,6 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     onPomodoroPhaseChange: (from, to) => {
       if (to === 'break') {
-        audioEngine.playBell('inhale');
-        voiceWhisperer.speak('inhale');
         if (pomodoroPhaseLabel) pomodoroPhaseLabel.textContent = 'Mindful Breath Break • Downshift & Recharge';
       } else {
         if (pomodoroPhaseLabel) pomodoroPhaseLabel.textContent = 'Deep Work Focus (25m)';
@@ -901,7 +1138,11 @@ document.addEventListener('DOMContentLoaded', () => {
           <polygon points="5 3 19 12 5 21 5 3"></polygon>
         </svg>
       `;
-      playBtnText.textContent = breathingEngine.appMode === 'pomodoro' ? 'Start Sprint' : 'Begin Reset';
+      if (breathingEngine.appMode === 'pomodoro') {
+        playBtnText.textContent = breathingEngine.isPaused ? 'Resume Sprint' : 'Start Sprint';
+      } else {
+        playBtnText.textContent = breathingEngine.isPaused ? 'Resume Reset' : 'Begin Reset';
+      }
       playBtn.classList.remove('is-running');
       document.body.classList.remove('session-active');
     }
@@ -958,12 +1199,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Sound Settings Drawer
-  soundSettingsBtn.addEventListener('click', () => {
-    soundDrawer.classList.toggle('open');
+  // Sound Settings Drawer with Accessible Focus Control
+  soundSettingsBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = soundDrawer.classList.toggle('open');
+    soundSettingsBtn.setAttribute('aria-expanded', String(isOpen));
+    if (isOpen) {
+      setTimeout(() => closeSoundDrawerBtn && closeSoundDrawerBtn.focus(), 50);
+    } else {
+      soundSettingsBtn.focus();
+    }
   });
+
   closeSoundDrawerBtn.addEventListener('click', () => {
     soundDrawer.classList.remove('open');
+    soundSettingsBtn.setAttribute('aria-expanded', 'false');
+    soundSettingsBtn.focus();
+  });
+
+  // Close Sound Drawer on Outside Click
+  document.addEventListener('click', (e) => {
+    if (soundDrawer && soundDrawer.classList.contains('open')) {
+      if (!soundDrawer.contains(e.target) && !soundSettingsBtn.contains(e.target)) {
+        soundDrawer.classList.remove('open');
+        soundSettingsBtn.setAttribute('aria-expanded', 'false');
+        soundSettingsBtn.focus();
+      }
+    }
   });
 
   // Volume Sliders & Procedural Synthesizers
@@ -1049,8 +1311,8 @@ document.addEventListener('DOMContentLoaded', () => {
       isRecordingVideo = true;
       recordedVideoChunks = [];
 
-      // 1. Capture 60FPS high-DPI canvas stream
-      const canvasStream = canvas.captureStream(60);
+      // 1. Capture 30FPS high-DPI canvas stream (optimal efficiency & smoothness)
+      const canvasStream = canvas.captureStream(30);
 
       // 2. Mix Web Audio destination stream if available
       const audioTrack = audioEngine.getAudioStreamTrack();
@@ -1070,7 +1332,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       videoMediaRecorder = new MediaRecorder(combinedStream, {
         mimeType: selectedMime,
-        videoBitsPerSecond: 6000000 // High-quality 6 Mbps
+        videoBitsPerSecond: 5000000 // High-quality 5 Mbps
       });
 
       videoMediaRecorder.ondataavailable = (e) => {
@@ -1091,13 +1353,23 @@ document.addEventListener('DOMContentLoaded', () => {
           modalRecordVideoBtn.classList.remove('recording');
         }
 
+        // Release hardware video tracks to prevent memory leak
+        try {
+          canvasStream.getTracks().forEach(t => t.stop());
+          combinedStream.getTracks().forEach(t => t.stop());
+        } catch (cleanupErr) {}
+
         const blob = new Blob(recordedVideoChunks, { type: selectedMime });
         const videoUrl = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.download = `tabzen-reset-clip-${Date.now()}.webm`;
         a.href = videoUrl;
+        document.body.appendChild(a);
         a.click();
-        URL.revokeObjectURL(videoUrl);
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(videoUrl), 2000);
+        recordedVideoChunks = [];
+        videoMediaRecorder = null;
 
         if (shareFeedback) {
           shareFeedback.textContent = '🎥 10-Second HD Video clip downloaded! Upload directly to LinkedIn/X.';
@@ -1162,6 +1434,7 @@ document.addEventListener('DOMContentLoaded', () => {
       pill.classList.add('active');
       const protocol = pill.dataset.protocol;
       breathingEngine.setProtocol(protocol);
+      updatePlayBtn(breathingEngine.isRunning && !breathingEngine.isPaused);
 
       // Re-evaluate cardiac resonance
       if (calculatedBPM) {
@@ -1206,10 +1479,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   openCustomCfgBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    customModal.classList.add('show');
+    openAccessibleModal(customModal, openCustomCfgBtn);
   });
 
-  closeCustomModal.addEventListener('click', () => customModal.classList.remove('show'));
+  closeCustomModal.addEventListener('click', () => closeAccessibleModal(customModal));
 
   saveCustomBtn.addEventListener('click', () => {
     const newCfg = {
@@ -1226,49 +1499,37 @@ document.addEventListener('DOMContentLoaded', () => {
     const customPill = document.querySelector('.protocol-pill[data-protocol="custom"]');
     if (customPill) customPill.classList.add('active');
     breathingEngine.setProtocol('custom');
+    updatePlayBtn(breathingEngine.isRunning && !breathingEngine.isPaused);
 
-    customModal.classList.remove('show');
+    closeAccessibleModal(customModal);
   });
 
   // Zen Keyboard Shortcuts Modal Handlers
   if (openShortcutsBtn && shortcutsModal) {
     openShortcutsBtn.addEventListener('click', () => {
-      shortcutsModal.classList.add('show');
+      openAccessibleModal(shortcutsModal, openShortcutsBtn);
     });
   }
 
   if (closeShortcutsModal && shortcutsModal) {
     closeShortcutsModal.addEventListener('click', () => {
-      shortcutsModal.classList.remove('show');
-    });
-  }
-
-  if (shortcutsModal) {
-    shortcutsModal.addEventListener('click', (e) => {
-      if (e.target === shortcutsModal) {
-        shortcutsModal.classList.remove('show');
-      }
+      closeAccessibleModal(shortcutsModal);
     });
   }
 
   // Zen Studio Tools Modal Handlers
   const closeZenTools = () => {
-    if (zenToolsModal) zenToolsModal.classList.remove('show');
+    if (zenToolsModal) closeAccessibleModal(zenToolsModal);
   };
 
   if (zenMenuBtn && zenToolsModal) {
     zenMenuBtn.addEventListener('click', () => {
-      zenToolsModal.classList.add('show');
+      openAccessibleModal(zenToolsModal, zenMenuBtn);
     });
   }
 
   if (closeZenToolsModal) closeZenToolsModal.addEventListener('click', closeZenTools);
   if (closeZenToolsFooterBtn) closeZenToolsFooterBtn.addEventListener('click', closeZenTools);
-  if (zenToolsModal) {
-    zenToolsModal.addEventListener('click', (e) => {
-      if (e.target === zenToolsModal) closeZenTools();
-    });
-  }
 
   if (openAnalyticsBtn) {
     openAnalyticsBtn.addEventListener('click', closeZenTools);
@@ -1288,6 +1549,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Check for 432Hz Crystal Bowl key triggers (A - L)
     if (KEY_NOTE_MAP[lowerKey] !== undefined) {
+      if (e.repeat) return; // Prevent continuous machine-gun audio on key hold
       e.preventDefault();
       playCrystalBowl(KEY_NOTE_MAP[lowerKey]);
       return;
@@ -1314,15 +1576,26 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (e.key === '?' || (e.key === '/' && e.shiftKey)) {
       e.preventDefault();
       if (shortcutsModal) {
-        shortcutsModal.classList.toggle('show');
+        if (shortcutsModal.classList.contains('show')) {
+          closeAccessibleModal(shortcutsModal);
+        } else {
+          openAccessibleModal(shortcutsModal, openShortcutsBtn);
+        }
       }
     } else if (e.key === 'Escape') {
-      if (zenToolsModal && zenToolsModal.classList.contains('show')) zenToolsModal.classList.remove('show');
-      if (shortcutsModal && shortcutsModal.classList.contains('show')) shortcutsModal.classList.remove('show');
-      if (customModal && customModal.classList.contains('show')) customModal.classList.remove('show');
-      if (analyticsModal && analyticsModal.classList.contains('show')) analyticsModal.classList.remove('show');
-      if (heartbeatModal && heartbeatModal.classList.contains('show')) heartbeatModal.classList.remove('show');
-      if (completionModal && completionModal.classList.contains('show')) completionModal.classList.remove('show');
+      // Check sound drawer first
+      if (soundDrawer && soundDrawer.classList.contains('open')) {
+        soundDrawer.classList.remove('open');
+        soundSettingsBtn.setAttribute('aria-expanded', 'false');
+        if (soundSettingsBtn) soundSettingsBtn.focus();
+        return;
+      }
+      // Check open modals
+      const openModals = document.querySelectorAll('.modal-overlay.show');
+      if (openModals.length > 0) {
+        closeAccessibleModal(openModals[openModals.length - 1]);
+        return;
+      }
     } else if (e.key >= '1' && e.key <= '5') {
       const idx = parseInt(e.key, 10) - 1;
       if (protocolPills[idx]) protocolPills[idx].click();
@@ -1363,25 +1636,25 @@ document.addEventListener('DOMContentLoaded', () => {
     modalQuoteText.textContent = `"${currentActiveQuote.text}"`;
     modalQuoteAuthor.textContent = `— ${currentActiveQuote.author}`;
 
-    completionModal.classList.add('show');
+    openAccessibleModal(completionModal, playBtn);
   }
 
   closeCompletionModal.addEventListener('click', () => {
-    completionModal.classList.remove('show');
+    closeAccessibleModal(completionModal);
   });
 
   if (repeatSessionBtn) {
     repeatSessionBtn.addEventListener('click', () => {
-      completionModal.classList.remove('show');
+      closeAccessibleModal(completionModal);
       togglePlay();
     });
   }
 
   if (viewInsightsBtn) {
     viewInsightsBtn.addEventListener('click', () => {
-      completionModal.classList.remove('show');
+      closeAccessibleModal(completionModal);
       renderAnalyticsModal();
-      analyticsModal.classList.add('show');
+      openAccessibleModal(analyticsModal, viewInsightsBtn);
     });
   }
 

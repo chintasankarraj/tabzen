@@ -103,10 +103,48 @@ class ZenVisualizer {
     // Celebration Stardust Particles
     this.celebrationParticles = [];
 
+    // Idle & Performance state
+    this.isRunning = false;
+    this.animFrameId = null;
+    this.lastFrameTime = 0;
+    this.lastInteractionTime = performance.now();
+    this._animateBound = this._animate.bind(this);
+    this.isReducedMotion = false;
+
     this._initResize();
     this._initInteractivity();
     this._initParticles();
-    this._animate();
+    this._initLifecycle();
+    this.animFrameId = requestAnimationFrame(this._animateBound);
+  }
+
+  _initLifecycle() {
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          if (this.animFrameId) {
+            cancelAnimationFrame(this.animFrameId);
+            this.animFrameId = null;
+          }
+        } else {
+          if (!this.animFrameId) {
+            this.lastFrameTime = performance.now();
+            this.lastInteractionTime = performance.now();
+            this.animFrameId = requestAnimationFrame(this._animateBound);
+          }
+        }
+      });
+    }
+
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      try {
+        const mql = window.matchMedia('(prefers-reduced-motion: reduce)');
+        this.isReducedMotion = mql.matches;
+        mql.addEventListener('change', (e) => {
+          this.isReducedMotion = e.matches;
+        });
+      } catch (e) {}
+    }
   }
 
   setAudioEngine(engine) {
@@ -144,6 +182,7 @@ class ZenVisualizer {
   }
 
   triggerRipple(x = null, y = null, color = null) {
+    this.lastInteractionTime = performance.now();
     const ripX = x !== null ? x : (this.centerX + this.mouseX);
     const ripY = y !== null ? y : (this.centerY + this.mouseY);
     const ripColor = color || (this.theme[this.phase] ? this.theme[this.phase].ring : '#2dd4bf');
@@ -159,6 +198,7 @@ class ZenVisualizer {
   }
 
   triggerCelebrationBurst(count = 75) {
+    this.lastInteractionTime = performance.now();
     const colors = ['#fbbf24', '#2dd4bf', '#ffffff', '#c084fc', '#f43f5e', '#38bdf8'];
     const originX = this.centerX + this.mouseX;
     const originY = this.centerY + this.mouseY;
@@ -204,6 +244,7 @@ class ZenVisualizer {
     const container = this.canvas.parentElement;
 
     container.addEventListener('mousemove', (e) => {
+      this.lastInteractionTime = performance.now();
       const rect = container.getBoundingClientRect();
       const clientX = e.clientX - rect.left;
       const clientY = e.clientY - rect.top;
@@ -216,6 +257,7 @@ class ZenVisualizer {
     });
 
     container.addEventListener('mouseleave', () => {
+      this.lastInteractionTime = performance.now();
       this.targetMouseX = 0;
       this.targetMouseY = 0;
       this.rawMouseAbsX = -9999;
@@ -225,6 +267,7 @@ class ZenVisualizer {
     if (window.DeviceOrientationEvent) {
       window.addEventListener('deviceorientation', (e) => {
         if (e.gamma !== null && e.beta !== null) {
+          this.lastInteractionTime = performance.now();
           this.targetMouseX = Math.max(-30, Math.min(30, e.gamma * 0.8));
           this.targetMouseY = Math.max(-30, Math.min(30, (e.beta - 45) * 0.8));
         }
@@ -254,13 +297,34 @@ class ZenVisualizer {
     this.lungVolume = state.lungVolume;
     this.phase = state.phase;
     this.progress = state.phaseProgress;
+    this.isRunning = !!state.isRunning;
+
+    if (this.isRunning) {
+      this.lastInteractionTime = performance.now();
+    }
 
     const minScale = 0.35;
     const maxScale = 0.95;
     this.targetScale = minScale + (this.lungVolume * (maxScale - minScale));
   }
 
-  _animate() {
+  _animate(now = performance.now()) {
+    this.animFrameId = requestAnimationFrame(this._animateBound);
+
+    // Performance Optimization: Check if rendering active visuals or peaceful idle
+    const isDynamic = this.isRunning ||
+      this.celebrationParticles.length > 0 ||
+      this.ripples.length > 0 ||
+      (now - this.lastInteractionTime < 2500);
+
+    if (!isDynamic) {
+      // Throttle idle rendering to ~26 FPS (38ms) to save CPU/GPU cycles
+      if (now - this.lastFrameTime < 38) {
+        return;
+      }
+    }
+    this.lastFrameTime = now;
+
     this.time += 0.018;
 
     this.mouseX += (this.targetMouseX - this.mouseX) * 0.08;
@@ -269,7 +333,6 @@ class ZenVisualizer {
     this.currentScale += (this.targetScale - this.currentScale) * 0.06;
 
     this._render();
-    requestAnimationFrame(() => this._animate());
   }
 
   _render() {
@@ -574,7 +637,7 @@ class ZenVisualizer {
     ctx.globalCompositeOperation = 'screen';
 
     const petals = 8;
-    const rotationSpeed = this.time * 0.25;
+    const rotationSpeed = this.isReducedMotion ? (this.time * 0.04) : (this.time * 0.25);
     const audioEnergy = audioData ? audioData.energy : 0;
     const bloomScale = radius * 1.6;
 

@@ -72,6 +72,7 @@ class ZenAudioEngine {
     this.waveSource = null;
     this.waveFilter = null;
     this.rainSource = null;
+    this.rainDropletInterval = null;
 
     // Binaural & Isochronic nodes
     this.leftOsc = null;
@@ -443,11 +444,29 @@ class ZenAudioEngine {
     rainFilter2.connect(this.rainGain);
     this.rainSource.start();
 
-    // Random acoustic droplet generator loop
-    setInterval(() => {
-      if (!this.isPlaying || this.isMuted || this.volumes.rain <= 0.05 || !this.ctx) return;
-      if (Math.random() > 0.45) this._playWaterDroplet();
-    }, 280);
+    this._updateRainDropletLoop();
+  }
+
+  _updateRainDropletLoop() {
+    const shouldRun = Boolean(this.isPlaying && !this.isMuted && this.volumes.rain > 0.05 && this.ctx);
+    if (shouldRun && !this.rainDropletInterval) {
+      this.rainDropletInterval = setInterval(() => {
+        if (!this.isPlaying || this.isMuted || this.volumes.rain <= 0.05 || !this.ctx) {
+          this._stopRainDroplets();
+          return;
+        }
+        if (Math.random() > 0.45) this._playWaterDroplet();
+      }, 280);
+    } else if (!shouldRun && this.rainDropletInterval) {
+      this._stopRainDroplets();
+    }
+  }
+
+  _stopRainDroplets() {
+    if (this.rainDropletInterval) {
+      clearInterval(this.rainDropletInterval);
+      this.rainDropletInterval = null;
+    }
   }
 
   _playWaterDroplet() {
@@ -681,6 +700,8 @@ class ZenAudioEngine {
       this.isochronicGain.gain.cancelScheduledValues(now);
       this.isochronicGain.gain.setTargetAtTime(this.volumes.isochronic * 0.35, now, 0.5);
     }
+
+    this._updateRainDropletLoop();
   }
 
   stopAmbience() {
@@ -706,6 +727,8 @@ class ZenAudioEngine {
       this.isochronicGain.gain.cancelScheduledValues(now);
       this.isochronicGain.gain.setTargetAtTime(0, now, 0.4);
     }
+
+    this._stopRainDroplets();
   }
 
   toggleMute() {
@@ -715,6 +738,7 @@ class ZenAudioEngine {
       this.masterGain.gain.cancelScheduledValues(now);
       this.masterGain.gain.setTargetAtTime(this.isMuted ? 0 : this.volumes.master, now, 0.05);
     }
+    this._updateRainDropletLoop();
     return this.isMuted;
   }
 
@@ -738,6 +762,10 @@ class ZenAudioEngine {
         this.thunderGain.gain.setTargetAtTime(this.volumes.thunder, now, 0.05);
       } else if (type === 'isochronic' && this.isPlaying) {
         this.isochronicGain.gain.setTargetAtTime(this.volumes.isochronic * 0.35, now, 0.05);
+      }
+
+      if (type === 'rain' || type === 'master') {
+        this._updateRainDropletLoop();
       }
     }
   }

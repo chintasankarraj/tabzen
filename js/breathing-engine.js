@@ -75,6 +75,7 @@ class BreathingEngine {
     this.pomodoroWorkDuration = 25 * 60; // 25 mins
     this.pomodoroBreakDuration = 60;    // 60s reset
     this.pomodoroRemaining = this.pomodoroWorkDuration;
+    this.pomodoroWorkElapsed = 0;
     this.lastPomodoroTick = 0;
 
     this.isRunning = false;
@@ -87,12 +88,16 @@ class BreathingEngine {
     this.completedCycles = 0;
 
     this.animationFrameId = null;
+    this.backgroundWorker = null;
+    this.fallbackInterval = null;
 
     // Callbacks
     this.onTick = options.onTick || (() => {});
     this.onPhaseChange = options.onPhaseChange || (() => {});
     this.onSessionComplete = options.onSessionComplete || (() => {});
     this.onPomodoroPhaseChange = options.onPomodoroPhaseChange || (() => {});
+
+    this._initBackgroundTimer();
   }
 
   get activeProtocol() {
@@ -119,16 +124,33 @@ class BreathingEngine {
       this.appMode = mode;
       this.pomodoroPhase = 'work';
       this.pomodoroRemaining = this.pomodoroWorkDuration;
+      this.pomodoroWorkElapsed = 0;
     }
   }
 
   setProtocol(id) {
     if (BREATH_PROTOCOLS[id] || id === 'custom') {
       const wasRunning = this.isRunning;
+      const wasPaused = this.isPaused;
       this.reset();
       this.protocolId = id;
-      if (wasRunning) {
+      if (wasRunning && !wasPaused) {
         this.start();
+      } else if (wasPaused) {
+        const now = performance.now();
+        this.isRunning = true;
+        this.isPaused = true;
+        this.pauseTime = now;
+        this.phaseStartTime = now;
+        this.sessionStartTime = now;
+        this.currentPhaseIdx = 0;
+        this.completedCycles = 0;
+        this.elapsedInSession = 0;
+        if (this.animationFrameId) {
+          cancelAnimationFrame(this.animationFrameId);
+          this.animationFrameId = null;
+        }
+        this.onTick(this._buildState(0, this.currentPhase.duration, 0));
       }
     }
   }
@@ -169,6 +191,7 @@ class BreathingEngine {
       }
     }
 
+    this._startBackgroundTimer();
     this._loop();
   }
 
@@ -176,6 +199,7 @@ class BreathingEngine {
     if (!this.isRunning || this.isPaused) return;
     this.isPaused = true;
     this.pauseTime = performance.now();
+    this._stopBackgroundTimer();
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = null;
@@ -190,6 +214,8 @@ class BreathingEngine {
     this.elapsedInSession = 0;
     this.pomodoroPhase = 'work';
     this.pomodoroRemaining = this.pomodoroWorkDuration;
+    this.pomodoroWorkElapsed = 0;
+    this._stopBackgroundTimer();
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = null;
@@ -197,16 +223,72 @@ class BreathingEngine {
     this.onTick(this._buildState(0, this.currentPhase.duration, 0));
   }
 
-  _loop() {
-    if (!this.isRunning || this.isPaused) return;
+  _initBackgroundTimer() {
+    try {
+      if (typeof window !== 'undefined' && typeof Worker !== 'undefined' && typeof Blob !== 'undefined' && typeof URL !== 'undefined') {
+        const blobCode = "let t=null;self.onmessage=function(e){if(e.data==='start'){if(!t){t=setInterval(function(){self.postMessage('tick');},250);}}else if(e.data==='stop'){if(t){clearInterval(t);t=null;}}};";
+        const blob = new Blob([blobCode], { type: 'application/javascript' });
+        this.backgroundWorker = new Worker(URL.createObjectURL(blob));
+        this.backgroundWorker.onmessage = () => {
+          if (this.isRunning && !this.isPaused) {
+            if (typeof document !== 'undefined' && document.hidden) {
+              this._step(performance.now());
+            }
+          }
+        };
+      }
+    } catch (e) {
+      this.backgroundWorker = null;
+    }
 
-    const now = performance.now();
+    if (typeof document !== 'undefined' && document.addEventListener) {
+      document.addEventListener('visibilitychange', () => {
+        if (this.isRunning && !this.isPaused) {
+          if (document.visibilityState === 'visible') {
+            this._step(performance.now());
+            if (!this.animationFrameId) {
+              this.animationFrameId = requestAnimationFrame(() => this._loop());
+            }
+          }
+        }
+      });
+    }
+  }
+
+  _startBackgroundTimer() {
+    if (this.backgroundWorker) {
+      try { this.backgroundWorker.postMessage('start'); return; } catch (e) {}
+    }
+    if (!this.fallbackInterval && typeof setInterval !== 'undefined') {
+      this.fallbackInterval = setInterval(() => {
+        if (this.isRunning && !this.isPaused) {
+          if (typeof document !== 'undefined' && document.hidden) {
+            this._step(performance.now());
+          }
+        }
+      }, 500);
+    }
+  }
+
+  _stopBackgroundTimer() {
+    if (this.backgroundWorker) {
+      try { this.backgroundWorker.postMessage('stop'); } catch (e) {}
+    }
+    if (this.fallbackInterval) {
+      clearInterval(this.fallbackInterval);
+      this.fallbackInterval = null;
+    }
+  }
+
+  _step(now) {
+    if (!this.isRunning || this.isPaused) return false;
 
     // 1. Pomodoro Work Sprint Logic
     if (this.appMode === 'pomodoro' && this.pomodoroPhase === 'work') {
       const deltaSec = (now - this.lastPomodoroTick) / 1000;
       this.lastPomodoroTick = now;
       this.pomodoroRemaining = Math.max(0, this.pomodoroRemaining - deltaSec);
+      this.pomodoroWorkElapsed = Math.min(this.pomodoroWorkDuration, this.pomodoroWorkElapsed + deltaSec);
 
       if (this.pomodoroRemaining <= 0) {
         // Transition from 25m Focus to 60s Guided Breath Reset!
@@ -220,8 +302,7 @@ class BreathingEngine {
       }
 
       this.onTick(this._buildPomodoroWorkState());
-      this.animationFrameId = requestAnimationFrame(() => this._loop());
-      return;
+      return true;
     }
 
     // 2. Breath Reset Cycle Logic (Used in Reset mode and Pomodoro Break)
@@ -246,15 +327,25 @@ class BreathingEngine {
     const effectiveTarget = this.appMode === 'pomodoro' ? this.pomodoroBreakDuration : this.targetDuration;
     if (effectiveTarget > 0 && this.elapsedInSession >= effectiveTarget) {
       this.finishSession();
-      return;
+      return false;
     }
 
     const progress = Math.min(1.0, (now - this.phaseStartTime) / (this.currentPhase.duration * 1000));
     const remainingInPhase = Math.max(0, this.currentPhase.duration * (1 - progress));
 
     this.onTick(this._buildState(progress, remainingInPhase, this.elapsedInSession));
+    return true;
+  }
 
-    this.animationFrameId = requestAnimationFrame(() => this._loop());
+  _loop() {
+    if (!this.isRunning || this.isPaused) return;
+
+    const now = performance.now();
+    const shouldContinue = this._step(now);
+
+    if (shouldContinue && this.isRunning && !this.isPaused) {
+      this.animationFrameId = requestAnimationFrame(() => this._loop());
+    }
   }
 
   _buildPomodoroWorkState() {
@@ -321,23 +412,33 @@ class BreathingEngine {
   finishSession() {
     this.isRunning = false;
     this.isPaused = false;
+    this._stopBackgroundTimer();
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = null;
     }
 
+    const isPomodoro = this.appMode === 'pomodoro';
+    const effectiveTarget = isPomodoro ? this.pomodoroBreakDuration : this.targetDuration;
+    const breakSeconds = effectiveTarget > 0 ? Math.min(effectiveTarget, Math.round(this.elapsedInSession)) : Math.round(this.elapsedInSession);
+    const workSeconds = isPomodoro ? Math.min(this.pomodoroWorkDuration, Math.round(this.pomodoroWorkElapsed)) : 0;
+    const totalSeconds = isPomodoro ? (workSeconds + breakSeconds) : breakSeconds;
+
     const stats = {
       appMode: this.appMode,
       protocol: this.activeProtocol.name,
-      durationSeconds: Math.round(this.elapsedInSession),
+      durationSeconds: totalSeconds,
+      workDurationSeconds: workSeconds,
+      breakDurationSeconds: breakSeconds,
       completedCycles: this.completedCycles,
-      estimatedStressReduction: Math.min(38, Math.round(this.completedCycles * 3.5 + (this.elapsedInSession / 10))),
+      estimatedStressReduction: Math.min(38, Math.round(this.completedCycles * 3.5 + (totalSeconds / 10))),
       timestamp: new Date().toISOString()
     };
 
     if (this.appMode === 'pomodoro') {
       this.pomodoroPhase = 'work';
       this.pomodoroRemaining = this.pomodoroWorkDuration;
+      this.pomodoroWorkElapsed = 0;
     }
 
     this.onSessionComplete(stats);
